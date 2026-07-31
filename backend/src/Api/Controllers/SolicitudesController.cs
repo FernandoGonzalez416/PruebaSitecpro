@@ -44,4 +44,16 @@ public class SolicitudesController : ControllerBase
 
         return Ok(await _servicio.ListarAsync(consulta, User.TenantId(), User.Rol(), User.UsuarioId()));
     }
+
+    [HttpGet("solicitudes/{id:guid}")]
+    public async Task<ActionResult<SolicitudDto>> Obtener(Guid id) =>
+        Ok(await _servicio.ObtenerAsync(id, User.TenantId(), User.Rol(), User.UsuarioId()));
+
+    [HttpPost("solicitudes")]
+    public async Task<ActionResult<SolicitudDto>> Crear([FromBody] SolicitudRequest request)
+    {
+        var solicitud = await _servicio.CrearAsync(request, User.TenantId(), User.UsuarioId());
+
+        return CreatedAtAction(nameof(Obtener), new { id = solicitud.Id }, solicitud);
+    }
 }

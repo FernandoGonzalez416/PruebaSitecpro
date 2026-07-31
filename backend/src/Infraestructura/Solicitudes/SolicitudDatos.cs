@@ -21,6 +21,19 @@ public class SolicitudDatos : ISolicitudDatos
             .OrderBy(c => c.Nombre)
             .ToListAsync();
 
+    public Task<Categoria?> BuscarCategoriaAsync(Guid id, Guid tenantId) =>
+        _db.Categorias.AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == id && c.TenantId == tenantId);
+
+    public Task<int> ContarPorOrgYAnioAsync(Guid tenantId, int anio)
+    {
+        var inicio = new DateTime(anio, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var fin = inicio.AddYears(1);
+
+        return _db.Solicitudes.CountAsync(s =>
+            s.TenantId == tenantId && s.FechaCreacion >= inicio && s.FechaCreacion < fin);
+    }
+
     public async Task<ListadoSolicitudesResultado> ListarAsync(
         ConsultaListadoSolicitudes consulta, Guid tenantId, Guid? solicitanteId, DateTime ahora)
     {
@@ -80,6 +93,23 @@ public class SolicitudDatos : ISolicitudDatos
             .ToListAsync();
 
         return new ListadoSolicitudesResultado(items, total);
+    }
+
+    public Task<Solicitud?> BuscarPorIdAsync(Guid id, Guid tenantId) =>
+        _db.Solicitudes
+            .Include(s => s.Categoria)
+            .Include(s => s.Solicitante)
+            .Include(s => s.Agente)
+            .FirstOrDefaultAsync(s => s.Id == id && s.TenantId == tenantId);
+
+    public async Task GuardarAsync(Solicitud solicitud)
+    {
+        if (_db.Entry(solicitud).State == EntityState.Detached)
+        {
+            _db.Solicitudes.Add(solicitud);
+        }
+
+        await _db.SaveChangesAsync();
     }
 
     private static IOrderedQueryable<Solicitud> Ordenar(IQueryable<Solicitud> query, string sort) => sort switch

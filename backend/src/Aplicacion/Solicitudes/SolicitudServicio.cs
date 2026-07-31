@@ -62,6 +62,71 @@ public class SolicitudServicio : ISolicitudServicio
         };
     }
 
+    public async Task<SolicitudDto> ObtenerAsync(Guid id, Guid tenantId, RolUsuario rol, Guid usuarioId)
+    {
+        var solicitud = await ObtenerDeLaOrganizacionAsync(id, tenantId);
+        PermisosSolicitud.Verificar(rol, AccionesSolicitud.Ver, esPropia: solicitud.SolicitanteId == usuarioId, solicitud.Estado);
+
+        return ConstruirDetalle(solicitud, DateTime.UtcNow);
+    }
+
+    public async Task<SolicitudDto> CrearAsync(SolicitudRequest request, Guid tenantId, Guid solicitanteId)
+    {
+        var categoria = await ObtenerCategoriaDeLaOrganizacionAsync(request.CategoriaId!.Value, tenantId);
+
+        var ahora = DateTime.UtcNow;
+        var totalDelAnio = await _datos.ContarPorOrgYAnioAsync(tenantId, ahora.Year);
+
+        var solicitud = new Solicitud
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            Codigo = GeneradorCodigoSolicitud.Generar(ahora.Year, totalDelAnio),
+            Titulo = request.Titulo!,
+            Descripcion = request.Descripcion!,
+            Estado = EstadoSolicitud.Nueva,
+            Prioridad = request.Prioridad!.Value,
+            CategoriaId = categoria.Id,
+            SolicitanteId = solicitanteId,
+            AgenteId = null,
+            FechaCreacion = ahora,
+            FechaLimiteSla = CalculadorSla.Calcular(ahora, categoria.SlaHoras, request.Prioridad!.Value)
+        };
+
+        await _datos.GuardarAsync(solicitud);
+
+        var creada = await _datos.BuscarPorIdAsync(solicitud.Id, tenantId);
+        return ConstruirDetalle(creada!, ahora);
+    }
+
+    private async Task<Solicitud> ObtenerDeLaOrganizacionAsync(Guid id, Guid tenantId)
+    {
+        var solicitud = await _datos.BuscarPorIdAsync(id, tenantId);
+        if (solicitud is null)
+        {
+            throw new ExcepcionNegocio(
+                codigo: "RECURSO_NO_ENCONTRADO",
+                message: "Recurso no encontrado.",
+                status: 404);
+        }
+
+        return solicitud;
+    }
+
+    private async Task<Categoria> ObtenerCategoriaDeLaOrganizacionAsync(Guid id, Guid tenantId)
+    {
+        var categoria = await _datos.BuscarCategoriaAsync(id, tenantId);
+        if (categoria is null)
+        {
+            throw new ExcepcionNegocio(
+                codigo: "RECURSO_NO_ENCONTRADO",
+                message: "Recurso no encontrado.",
+                status: 404);
+        }
+
+        return categoria;
+    }
+
     private static SolicitudListaItemDto ConstruirItem(Solicitud s, DateTime ahora) => new()
     {
         Id = s.Id,
@@ -73,6 +138,25 @@ public class SolicitudServicio : ISolicitudServicio
         Agente = s.Agente is null ? null : new UsuarioResumenDto { Id = s.Agente.Id, Nombre = s.Agente.Nombre },
         FechaCreacion = s.FechaCreacion,
         FechaLimiteSla = s.FechaLimiteSla,
+        Vencida = CalculadorSla.EstaVencida(s.FechaLimiteSla, s.Estado, ahora)
+    };
+
+    private static SolicitudDto ConstruirDetalle(Solicitud s, DateTime ahora) => new()
+    {
+        Id = s.Id,
+        Codigo = s.Codigo,
+        Titulo = s.Titulo,
+        Descripcion = s.Descripcion,
+        Estado = s.Estado,
+        Prioridad = s.Prioridad,
+        Categoria = new CategoriaResumenDto { Id = s.Categoria.Id, Nombre = s.Categoria.Nombre },
+        Solicitante = new UsuarioResumenDto { Id = s.Solicitante.Id, Nombre = s.Solicitante.Nombre },
+        Agente = s.Agente is null ? null : new UsuarioResumenDto { Id = s.Agente.Id, Nombre = s.Agente.Nombre },
+        FechaCreacion = s.FechaCreacion,
+        FechaLimiteSla = s.FechaLimiteSla,
+        FechaResolucion = s.FechaResolucion,
+        MotivoResolucion = s.MotivoResolucion,
+        MotivoCancelacion = s.MotivoCancelacion,
         Vencida = CalculadorSla.EstaVencida(s.FechaLimiteSla, s.Estado, ahora)
     };
 }
