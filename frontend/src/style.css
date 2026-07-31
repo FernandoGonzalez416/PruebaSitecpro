@@ -205,3 +205,142 @@ textarea {
 .placeholder p {
   color: var(--texto-suave);
 }
+
+/* Listado de solicitudes */
+.vista-listado {
+  flex: 1;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+.listado-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.listado-cabecera h1 {
+  margin: 0;
+}
+
+.listado-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.listado-filtros select,
+.listado-filtros input[type='search'] {
+  padding: 8px 12px;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  background: var(--superficie);
+}
+
+.listado-filtros input[type='search'] {
+  flex: 1;
+  min-width: 220px;
+}
+
+.listado-filtros select:focus,
+.listado-filtros input[type='search']:focus {
+  outline: 2px solid var(--acento);
+  outline-offset: 1px;
+}
+
+.filtro-vencidas {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--texto);
+  cursor: pointer;
+}
+
+.tabla-solicitudes {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tabla-solicitudes th,
+.tabla-solicitudes td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--borde);
+  text-align: left;
+  font-size: 15px;
+}
+
+.tabla-solicitudes th {
+  background: var(--fondo);
+  color: var(--texto-suave);
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tabla-solicitudes tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.fila-solicitud {
+  cursor: pointer;
+}
+
+.fila-solicitud:hover td {
+  background: var(--fondo);
+}
+
+.celda-titulo {
+  color: var(--titulo);
+  font-weight: 500;
+}
+
+.tabla-estado {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--texto-suave);
+}
+
+.badge-vencida {
+  display: inline-block;
+  padding: 2px 10px;
+  border: 1px solid var(--peligro-borde);
+  border-radius: 999px;
+  background: var(--peligro-fondo);
+  color: var(--peligro);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.listado-paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.paginacion-info {
+  color: var(--texto-suave);
+  font-size: 15px;
+}
+
+.btn-secundario {
+  border: 1px solid var(--borde);
+  background: var(--superficie);
+  color: var(--texto);
+}
+
+.btn-secundario:hover {
+  background: var(--fondo);
+}
