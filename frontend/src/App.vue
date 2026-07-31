@@ -1,7 +1,22 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
+import { onMounted } from 'vue'
+import AppNav from './components/AppNav.vue'
+import Toast from './components/Toast.vue'
+import { useAuthStore } from './stores/auth'
+
+const auth = useAuthStore()
+
+onMounted(() => {
+  if (auth.estaAutenticado) {
+    void auth.cargarMe()
+  }
+})
 </script>
 
 <template>
-  <HelloWorld />
+  <div class="app">
+    <AppNav v-if="auth.estaAutenticado" />
+    <Toast />
+    <RouterView />
+  </div>
 </template>

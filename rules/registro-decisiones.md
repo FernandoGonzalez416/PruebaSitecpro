@@ -471,3 +471,181 @@ equivocado y mantiene el "¿qué pasa si lanzo esto?" en un solo lugar.
 
 **Alcance:** `Dominio/Excepciones/ExcepcionTransicionInvalida.cs`,
 `Dominio/Excepciones/ExcepcionOperacionNoPermitida.cs`.
+
+---
+
+## [2026-07-31] — `categoriaId` inexistente o de otra org → 404 en POST/PUT
+
+**Contexto:** Al crear/editar una solicitud, el contrato no define qué pasa si el
+cliente envía un `categoriaId` que no existe o que pertenece a otra organización. Las
+candidatas eran 404 (`RECURSO_NO_ENCONTRADO`) o 422 (`VALIDACION`/`PARAMETRO_INVALIDO`).
+
+**Decisión:** Tanto para `categoriaId` inexistente como para uno de otra org se responde
+**404 `RECURSO_NO_ENCONTRADO`**. El servicio consulta la categoría filtrando por
+`tenantId` del token (RN-01); si no hay fila, lanza `ExcepcionRecursoNoEncontrado`. El
+efecto es que un tenant no puede distinguir si una categoría ajena existe o no — misma
+semántica que los recursos de solicitudes.
+
+**Alternativa descartada:** 422 `PARAMETRO_INVALIDO` (el ID es sintácticamente un GUID
+válido, así que no es un error de formato) y 422 `RECURSO_NO_ENCONTRADO`… — se descartó
+porque el código del contrato es semánticamente de "no encontrado" y porque tratar la
+categoría como un recurso oculto por tenant es coherente con RN-01 (404, nunca 403).
+
+**Por qué:** Mantiene un único comportamiento "recurso ajeno = inexistente" en toda la
+API y no filtra información entre tenants. Además se pudo probar en runtime con una
+categoría de Bufete Sur enviada por un token de Cooperativa Norte → 404.
+
+**Alcance:** `Aplicacion/Solicitudes/SolicitudServicio.cs`, `Dominio/Excepciones/ExcepcionRecursoNoEncontrado.cs`.
+
+---
+
+## [2026-07-31] — Orden semántico de prioridad con CASE WHEN inline (Critica → Baja)
+
+**Contexto:** El contrato permite `sort=prioridad` y `sort=-prioridad` sobre solicitudes,
+pero "prioridad" es una enum (`Critica`, `Alta`, `Media`, `Baja`) que en SQLite se guarda
+como string: ordenar por el texto daría orden alfabético (`Alta < Baja < Critica <
+Media`), sin sentido de negocio.
+
+**Decisión:** `OrdenamientoSolicitudes` mapea `prioridad`/`-prioridad` a un
+`Expression<Func<Solicitud,int>>` que emite un ternario comparado con `0` (Critica=0,
+Alta=1, Media=2, Baja=3); EF Core lo traduce a un `CASE WHEN` y la ordenación ocurre en
+la base (server-side, sin cargar todo en memoria). El orden resultante es Critica →
+Alta → Media → Baja (y el inverso con `-`), verificado en runtime.
+
+**Alternativa descartada:** (a) Ordenar por el string de la enum — descartado por el
+orden alfabético absurdo. (b) Ordenar en memoria tras traer la página — viola la regla
+"todo server-side". (c) Un índice de prioridad calculado en el cliente — mismo motivo.
+
+**Por qué:** El `CASE WHEN` generado por el ternario es la forma más directa de que el
+orden de negocio lo resuelva la base y se comporte bien con la paginación.
+
+**Alcance:** `Aplicacion/Solicitudes/OrdenamientoSolicitudes.cs`,
+`Infraestructura/Solicitudes/SolicitudDatos.cs`.
+
+---
+
+## [2026-07-31] — RN-07 por conteo de filas del año en el rango + `{n+1:D5}`
+
+**Contexto:** RN-07 exige `SOL-{año}-{correlativo de 5 dígitos}` independiente por org y
+por año. El enunciado deja explícitamente fuera de alcance la infalibilidad ante
+concurrencia, pero había que elegir cómo obtener el correlativo.
+
+**Decisión:** `Dominio/Reglas/GeneradorCodigoSolicitud` recibe `año` y `totalDeFilasDelAño`
+y devuelve `SOL-{año}-{(total+1):D5}`. El servicio de aplicación cuenta las solicitudes
+de la org con `fechaCreacion` en el rango `[año, año+1)` y le pasa ese número. No existe
+tabla de secuencia ni columna de correlativo separada.
+
+**Alternativa descartada:** (a) Tabla `Correlativos(tenantId, año, ultimo)` con transacción
+y bloqueo: infalible, pero el enunciado dice que no hace falta y agrega infraestructura.
+(b) `MAX(Codigo)` con extracción del sufijo: frágil ante formatos y no maneja "huecos".
+
+**Por qué:** El conteo de filas es simple, determinista y suficiente para el alcance
+declarado; además el código queda como función pura testeable (5 tests en
+`GeneradorCodigoSolicitudTests`: reinicio por año, por org, padding a 5, formato).
+
+**Alcance:** `Dominio/Reglas/GeneradorCodigoSolicitud.cs`,
+`Aplicacion/Solicitudes/SolicitudServicio.cs`, `tests/Dominio/GeneradorCodigoSolicitudTests.cs`.
+
+---
+
+## [2026-07-31] — `sort` no soportado → 400 `PARAMETRO_INVALIDO`
+
+**Contexto:** El contrato define las claves de ordenamiento soportadas pero no dice qué
+devolver si el cliente envía un `sort` que no está en la lista (p. ej. `sort=zzz`).
+
+**Decisión:** Si la clave de orden no es una de las soportadas
+(`fechaCreacion`, `-fechaCreacion`, `prioridad`, `-prioridad`, `codigo`), el endpoint
+responde **400 `PARAMETRO_INVALIDO`** con detalle indicando las claves válidas. La
+validación vive en `OrdenamientoSolicitudes` (capa de aplicación), no en el controller.
+
+**Alternativa descartada:** Ignorar el `sort` desconocido y usar el default. Se descartó
+porque un cliente que pide ordenar por algo inexistente merece saberlo, y silenciar
+fallos de contrato es lo que las pruebas automáticas quieren detectar.
+
+**Por qué:** Coherente con el resto de parámetros inválidos de paginación (`page=0`,
+`pageSize=101`) que ya devolvían 400; unifica la semántica de "parámetro mal pedido".
+
+**Alcance:** `Aplicacion/Solicitudes/OrdenamientoSolicitudes.cs`,
+`Api/Controllers/SolicitudesController.cs`.
+
+---
+
+## [2026-07-31] — Token JWT persistido en localStorage (trade-off con la redirección en 401)
+
+**Contexto:** La fase 06 exige que la sesión sobreviva al refresh de la página y que
+cualquier 401 limpie la sesión y redirija a `/login`. Había que elegir dónde vive el
+token: memoria, sessionStorage o localStorage.
+
+**Decisión:** El token y el `usuario` (JSON) se guardan en `localStorage` con claves
+`mesasitec.accessToken` / `mesasitec.usuario`. El store de auth inicializa su estado
+desde ahí (lectura síncrona en el guard del router, que no puede ser async para esto)
+y `cargarMe()` valida el token contra `/me` al recargar; si el token expiró, el
+interceptor de 401 lo limpia y redirige.
+
+**Alternativa descartada:** (a) Memoria pura (variable del store): sobrevive al refresh
+no — habría que re-loginear. (b) `sessionStorage`: el DoD pide que la sesión se
+mantenga al recargar, y aunque `sessionStorage` sobrevive al F5, se pierde al abrir una
+nueva pestaña; además no aporta ventajas de seguridad reales frente a `localStorage`
+frente a XSS.
+
+**Por qué:** `localStorage` es el mecanismo estándar para sesión persistente en SPAs y
+permite que el guard de rutas decida de forma síncrona antes de renderizar. El riesgo
+de XSS se mitiga con la práctica del proyecto de no usar `v-html` y mantener el
+cliente HTTP único; el trade-off queda explícito: persistencia a cambio de no poder
+invalidar el token desde el navegador salvo por 401.
+
+**Alcance:** `frontend/src/api/http.ts`, `frontend/src/stores/auth.ts`, `frontend/src/main.ts`.
+
+---
+
+## [2026-07-31] — Cliente HTTP con fetch nativo y manejador de 401 desacoplado
+
+**Contexto:** La fase pide un único módulo HTTP que inyecte el token y redirija a
+`/login` en cualquier 401. Había que decidir el cliente (fetch vs axios) y cómo
+notificar la redirección sin crear un import circular entre `api/http.ts` y el store
+de auth (el store llama al cliente, y el cliente necesitaría al store para cerrar
+sesión).
+
+**Decisión:** `fetch` nativo en `src/api/http.ts` con una función
+`request<T>(path, options)` tipada. La redirección por 401 no se resuelve importando
+el store: `main.ts` registra un callback (`registrarManejadorNoAutenticado`) que
+limpia la sesión, muestra el toast y navega. La opción `skipUnauthorizedRedirect`
+evita la redirección en el propio `POST /auth/login`, donde un 401 significa
+"credenciales inválidas" y la vista debe mostrar `login-error`.
+
+**Alternativa descartada:** (a) `axios` con interceptores: agrega una dependencia que
+el scaffold no tenía; la redirección en el interceptor tendría el mismo problema de
+acople y habría que tipar `AxiosError` a mano igual. (b) Importar el store de auth
+dentro de `http.ts`: genera un ciclo `http → store → api/auth → http`.
+
+**Por qué:** `fetch` ya cubre todo lo que la fase pide (headers, JSON, manejo de
+errores) y el callback registrado rompe el ciclo de dependencias manteniendo el 401
+manejado en un solo lugar. El `Content-Type` se setea a `application/json` en toda
+petición y el error del servidor se parsea a `ApiError` (codigo/status/detail/errores)
+para mostrar el mensaje de la API en `login-error`.
+
+**Alcance:** `frontend/src/api/http.ts`, `frontend/src/api/{auth,categorias,solicitudes}.ts`,
+`frontend/src/main.ts`, `frontend/src/views/LoginView.vue`.
+
+---
+
+## [2026-07-31] — Base URL absoluta de la API en el cliente HTTP
+
+**Contexto:** `vite.config.ts` define un proxy de `/api` → `http://localhost:5080`,
+pero la fase 06 especifica el cliente con base `http://localhost:5080/api/v1` y el
+contrato fija esa base. Ambas rutas conviven en el scaffold.
+
+**Decisión:** El cliente HTTP usa la URL absoluta `http://localhost:5080/api/v1`
+(expuesta como constante `API_BASE_URL`), como indica la fase. La comunicación
+funciona por CORS (la API ya habilita `http://localhost:5173` con `AllowAnyHeader` y
+`AllowAnyMethod`).
+
+**Alternativa descartada:** Usar rutas relativas `/api/v1/...` apoyadas en el proxy de
+Vite. Funciona en dev pero cambia la forma de las peticiones según el entorno y aleja
+el código del literal de la fase; el proxy queda disponible para despliegues que lo
+necesiten.
+
+**Por qué:** La fase y el contrato son la fuente de verdad; una constante única
+permite cambiar de estrategia (relativo o por variable de entorno) en un solo lugar.
+
+**Alcance:** `frontend/src/api/http.ts`.

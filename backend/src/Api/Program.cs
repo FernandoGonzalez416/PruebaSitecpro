@@ -1,10 +1,13 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using MesaSitec.Aplicacion.Autenticacion;
+using MesaSitec.Aplicacion.Solicitudes;
 using MesaSitec.Api.Errores;
 using MesaSitec.Infraestructura.Autenticacion;
 using MesaSitec.Infraestructura.Data;
 using MesaSitec.Infraestructura.Data.Semilla;
+using MesaSitec.Infraestructura.Solicitudes;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
@@ -41,8 +44,13 @@ builder.Services.AddSingleton<IGeneradorTokens>(_ =>
 builder.Services.AddSingleton<IVerificadorPassword, VerificadorPasswordBcrypt>();
 builder.Services.AddScoped<IAutenticacionDatos, AutenticacionDatos>();
 builder.Services.AddScoped<IAutenticacionServicio, AutenticacionServicio>();
+builder.Services.AddScoped<ISolicitudDatos, SolicitudDatos>();
+builder.Services.AddScoped<ISolicitudServicio, SolicitudServicio>();
 
-builder.Services.AddControllers();
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
