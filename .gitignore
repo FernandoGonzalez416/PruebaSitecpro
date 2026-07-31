@@ -1,0 +1,32 @@
+# Local AI runtime state
+.atl/
+
+# .NET build output
+**/bin/
+**/obj/
+
+# Node
+node_modules/
+dist/
+
+# SQLite databases (never version)
+*.db
+*.db-shm
+*.db-wal
+
+# Environment files (keep .env.example)
+.env
+
+# ASP.NET local config
+appsettings.*.local.json
+
+# IDE / editor
+*.user
+.vs/
+.vscode/
+
+# SDD tooling (local only)
+.config/
+
+# Local backups
+.backup-*
