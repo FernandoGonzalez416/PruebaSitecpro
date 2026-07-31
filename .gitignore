@@ -26,7 +26,8 @@ appsettings.*.local.json
 .vscode/
 
 # SDD tooling (local only)
-.config/
+.config/*
+!.config/dotnet-tools.json
 
 # Local backups
 .backup-*
