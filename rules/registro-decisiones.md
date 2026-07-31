@@ -649,3 +649,35 @@ necesiten.
 permite cambiar de estrategia (relativo o por variable de entorno) en un solo lugar.
 
 **Alcance:** `frontend/src/api/http.ts`.
+
+---
+
+## [2026-07-31] — Búsqueda con debounce de 400 ms y recarga a página 1 con guard anti-race
+
+**Contexto:** La fase 07 permite dos formas de disparar la búsqueda `q` sin
+"disparar por tecla": debounce o botón de aplicar. Además, cambiar cualquier
+filtro debe volver a la página 1, y como las respuestas HTTP pueden llegar en
+desorden (cambiar de filtro rápido), una respuesta lenta podría pisar a una
+nueva y dejar el listado con datos que no corresponden a los filtros actuales.
+
+**Decisión:** (a) Debounce de 400 ms con `setTimeout` en `filtro-busqueda`
+(cancelando el timer anterior en cada tecla); el resto de filtros recarga al
+`change`. (b) `cargar(filtros?)` del store `solicitudes` resetea `page` a 1
+cuando recibe filtros y los conserva para la paginación; `irAPagina(n)` recarga
+sin filtros. (c) Un contador de secuencia en el módulo del store descarta la
+respuesta de cualquier petición anterior a la última lanzada (guard anti-race),
+evitando que datos obsoletos sobreescriban el estado.
+
+**Alternativa descartada:** (a) Botón "Aplicar" para la búsqueda: añade un paso
+extra y empeora la UX frente al debounce, que es el estándar para listados
+server-side. (b) Sin guard de secuencia: un usuario que cambia dos filtros
+seguidos podía ver una combinación mezclada si las respuestas llegaban fuera de
+orden.
+
+**Por qué:** El debounce cumple el requisito de no disparar por tecla con menos
+fricción; el reset a página 1 es el comportamiento esperado de "cambié la
+consulta" (evita quedarse en una página que ya no existe con el nuevo filtro);
+el guard de secuencia hace el store determinista ante respuestas concurrentes
+sin complejidad adicional.
+
+**Alcance:** `frontend/src/stores/solicitudes.ts`, `frontend/src/views/solicitudes/ListadoView.vue`.
