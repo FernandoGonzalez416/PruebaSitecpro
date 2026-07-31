@@ -200,3 +200,137 @@ contraseñas estén hasheadas (nunca texto plano).
 
 **Alcance:** `SeedData.cs`. Nota: la verificación de la fase confirmó que en runtime
 no hay `Sitec.2026` en claro en la base.
+
+---
+
+## [2026-07-30] — Errores con IExceptionHandler y código ERROR_INTERNO
+
+**Contexto:** La fase 03 exige que toda respuesta 4xx/5xx sea `application/problem+json`
+con campo `codigo` obligatorio, y que una excepción no controlada devuelva 500 sin stack
+trace. El contrato define 8 códigos de error pero ninguno para el 500 genérico.
+
+**Decisión:** Se usó `IExceptionHandler` (nuevo en .NET 8), registrado por DI y activado
+con `app.UseExceptionHandler()`. `ErrorHandler` mapea `ExcepcionNegocio` a su
+`Codigo`/`Status`/`Detail`, y toda excepción inesperada a `500` con
+`codigo: "ERROR_INTERNO"` (kebab `error-interno`), logueando el detalle solo en el
+servidor. El reto 401 de JwtBearer lo maneja `JwtBearerEvents.OnChallenge`, porque ese
+reto se genera fuera del pipeline de excepciones y nunca llegaría al `IExceptionHandler`.
+
+**Alternativa descartada:** Middleware clásico con `try/catch` en `InvokeAsync`. Funciona,
+pero hay que registrarlo a mano, gestionar el logging y respeta menos la composición por
+DI del host de ASP.NET Core. `IExceptionHandler` también permite probar el mapeo
+error→respuesta como una unidad.
+
+**Por qué:** `ERROR_INTERNO` no está en la tabla del contrato; se eligió un código
+coherente con la nomenclatura existente (`_` separador, kebab en `type`) para que las
+pruebas automáticas tengan un valor estable que verificar en el 500.
+
+**Alcance:** `backend/src/Api/Errores/ErrorHandler.cs`, `Program.cs`,
+`backend/src/Dominio/Excepciones/ExcepcionNegocio.cs` y `ExcepcionNoAutenticado.cs`.
+
+---
+
+## [2026-07-30] — Secreto JWT por variable de entorno con fallback solo de desarrollo
+
+**Contexto:** El secreto HS256 exige mínimo 32 caracteres y no debe estar hardcodeado en
+código ni en configuración de producción. La API se levanta con `dotnet run` sin un
+entorno que defina `JWT_SECRET`.
+
+**Decisión:** `Program.cs` lee `JWT_SECRET`/`JWT_ISSUER`/`JWT_AUDIENCE` de variables de
+entorno (con precedencia) con fallback a la sección `Authentication:JwtBearer` de
+`appsettings`. `appsettings.json` declara `Issuer`/`Audience` y un `SecretKey` vacío; el
+secret de desarrollo vive solo en `appsettings.Development.json` (`solo-desarrollo-…`,
+≥32 caracteres). Si al iniciar no hay secret válido, la app falla rápido
+(`InvalidOperationException`) en lugar de arrancar con autenticación rota. El
+`.env.example` documenta las tres variables.
+
+**Alternativa descartada:** Poner un secret "de ejemplo" en `appsettings.json`. Se
+descartó para que producción no pueda arrancar con un secreto conocido y comprometido;
+el fallback de desarrollo queda confinado al archivo de desarrollo que nunca se
+despliega.
+
+**Por qué:** Separar configuración de secretos por entorno es una práctica de seguridad
+básica; el fail-fast evita que un despliegue mal configurado sirva 401 en silencio.
+
+**Alcance:** `Program.cs`, `appsettings.json`, `appsettings.Development.json`,
+`.env.example`.
+
+---
+
+## [2026-07-31] — Claims JWT sin remapeo (`MapInboundClaims = false`) para leer `sub`
+
+**Contexto:** El token se emite con claims verbatim (`sub`, `tenantId`, `rol`, `email`).
+El pipeline por defecto de JwtBearer remapea los claims de entrada —entre otros, `sub`
+→ `ClaimTypes.NameIdentifier`—, por lo que `User.FindFirstValue("sub")` en `/me`
+devolvería `null` y el sujeto no se podría leer desde el token emitido por
+`GeneradorTokenJwt`.
+
+**Decisión:** Se configuró `options.MapInboundClaims = false` en `AddJwtBearer`. Los
+claims se mantienen con su nombre original (`"sub"`, `"tenantId"`, `"rol"`, `"email"`)
+y el controller lee `User.FindFirstValue("sub")` (con fallback 401 si no parsea).
+Se verificó en runtime: se decodificó el JWT emitido por login y `/me` devolvió el
+mismo `id` de usuario que el claim `sub`.
+
+**Alternativa descartada:** (a) `JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear()`:
+muta un estático global del proceso y afecta a cualquier otro handler o test que consuma
+JWT en el mismo app domain. (b) `TokenValidationParameters.NameClaimType = "sub"`: no
+basta, porque el mapa de entrada ya transformó el claim antes de construir la
+`ClaimsIdentity`; el claim remapeado ya no tiene el nombre original.
+
+**Por qué:** `MapInboundClaims = false` es una opción scoped al handler de JWT de esta
+app (sin efectos colaterales), mantiene los nombres de claims que documenta el contrato
+y hace explícito qué claim representa al sujeto.
+
+**Alcance:** `backend/src/Api/Program.cs` (`AddJwtBearer`), `backend/src/Api/Controllers/AuthController.cs`.
+
+---
+
+## [2026-07-31] — Content-Type `application/problem+json` explícito en `WriteAsJsonAsync`
+
+**Contexto:** `ErrorHandler` y `JwtBearerEvents.OnChallenge` armaban la respuesta de
+error seteando `Response.ContentType = "application/problem+json"` y luego llamando a
+`WriteAsJsonAsync`. Al probar en runtime, todas las respuestas 4xx/5xx salían con
+`Content-Type: application/json; charset=utf-8`: `WriteAsJsonAsync` sobrescribe el
+content-type seteado previamente.
+
+**Decisión:** Se pasa `contentType: "application/problem+json"` como argumento a
+`WriteAsJsonAsync` en `ErrorHandler` y en `OnChallenge`. Para el 422 de validación,
+el `InvalidModelStateResponseFactory` devuelve un `ObjectResult` con
+`ContentTypes = { "application/problem+json" }`.
+
+**Alternativa descartada:** Seguir seteando `Response.ContentType` antes de escribir.
+Es frágil: depende de que el método de escritura no pise el header. La sobrecarga con
+`contentType` fija el content type en el mismo punto donde se escribe el body.
+
+**Por qué:** El contrato exige `Content-Type: application/problem+json` en toda
+respuesta de error y las pruebas automáticas lo verifican. El bug solo se detectó con
+la verificación HTTP real (la lectura de `Content-Type` en la respuesta, no solo el
+código).
+
+**Alcance:** `backend/src/Api/Errores/ErrorHandler.cs`, `backend/src/Api/Program.cs`.
+
+---
+
+## [2026-07-31] — Validación de campos de `[ApiController]` mapeada a 422 `VALIDACION`
+
+**Contexto:** Con `[ApiController]`, el ModelState inválido produce una respuesta 400
+automática generada por el framework que **no incluye el campo `codigo`**, violando la
+regla del contrato de que `codigo` es obligatorio en toda respuesta de error. La tabla
+de códigos define `VALIDACION` (422) para errores de validación de campos.
+
+**Decisión:** Se configuró `ApiBehaviorOptions.InvalidModelStateResponseFactory` en
+`Program.cs`: devuelve 422 con `codigo: "VALIDACION"`, `Content-Type
+application/problem+json`, y el diccionario `errores` con claves en camelCase
+(`JsonNamingPolicy.CamelCase.ConvertName`) para que `Password` → `password` según el
+contrato.
+
+**Alternativa descartada:** Aceptar la respuesta 400 por defecto del framework. Se
+descartó porque rompe el contrato (errores sin `codigo`) y el 400 no está en la tabla
+de códigos para este caso.
+
+**Por qué:** El paso 5 de la fase exige `codigo` obligatorio en todas las respuestas de
+error; mapear el ModelState al código `VALIDACION` existente mantiene el contrato sin
+inventar un código nuevo.
+
+**Alcance:** `backend/src/Api/Program.cs` (`ApiBehaviorOptions`), aplica a todo request
+con validación automática de `[ApiController]`.
