@@ -7,14 +7,20 @@ using MesaSitec.Infraestructura.Data;
 using MesaSitec.Infraestructura.Data.Semilla;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var connectionString = builder.Configuration.GetConnectionString("Default");
+var sqlite = new SqliteConnectionStringBuilder(connectionString);
+if (!Path.IsPathRooted(sqlite.DataSource))
+    sqlite.DataSource = Path.Combine(builder.Environment.ContentRootPath, sqlite.DataSource);
+
 builder.Services.AddDbContext<MesaSitecDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("Default")));
+    options.UseSqlite(sqlite.ConnectionString));
 
 var jwtSecret = builder.Configuration["JWT_SECRET"]
     ?? builder.Configuration["Authentication:JwtBearer:SecretKey"];

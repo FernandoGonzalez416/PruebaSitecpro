@@ -334,3 +334,32 @@ inventar un código nuevo.
 
 **Alcance:** `backend/src/Api/Program.cs` (`ApiBehaviorOptions`), aplica a todo request
 con validación automática de `[ApiController]`.
+
+---
+
+## [2026-07-31] — Ruta SQLite relativa anclada a ContentRootPath
+
+**Contexto:** La connection string `Data Source=mesasitec.db` es relativa y SQLite la
+resuelve contra el directorio de trabajo (CWD), no contra el directorio de la app. Si
+la API se ejecuta desde otro directorio (repo root, servicio con otro WorkingDirectory),
+se crea un `mesasitec.db` distinto en ese CWD y el seed re-siembra datos vacíos →
+aparenta pérdida de datos. Se detectó durante la verificación de la fase 03.
+
+**Decisión:** En `Program.cs`, la connection string se parsea con
+`SqliteConnectionStringBuilder`; si `DataSource` no es una ruta raíz, se ancla con
+`Path.Combine(builder.Environment.ContentRootPath, dataSource)`. La DB vive siempre en
+`backend/src/Api/mesasitec.db` sin importar desde dónde se ejecute la app.
+
+**Alternativa descartada:** (a) Hardcodear una ruta absoluta en `appsettings.json`: rompe
+portabilidad y versiona una ruta de una máquina concreta. (b) Dejar la ruta relativa y
+documentar "ejecutar siempre desde `backend/src/Api`": frágil y silencioso ante un
+lanzamiento desde otro CWD. (c) Anclar a `AppContext.BaseDirectory` (la carpeta `bin/`):
+pone la base en el directorio de salida, que se regenera/limpia, en vez de en el content
+root que es el lugar idiomático para datos de la app.
+
+**Por qué:** `dotnet run --project X` fija el content root a X aunque el shell esté en
+otro directorio (verificado en runtime: "Content root path: ...backend\src\Api"); anclar
+a `ContentRootPath` hace el path determinista en el flujo normal de ejecución.
+
+**Alcance:** `backend/src/Api/Program.cs` (resolución de connection string). No se tocó
+`DesignTimeDbContextFactory.cs` (ruta relativa, solo para tooling de migraciones).
