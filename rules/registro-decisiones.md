@@ -567,3 +567,85 @@ fallos de contrato es lo que las pruebas automáticas quieren detectar.
 
 **Alcance:** `Aplicacion/Solicitudes/OrdenamientoSolicitudes.cs`,
 `Api/Controllers/SolicitudesController.cs`.
+
+---
+
+## [2026-07-31] — Token JWT persistido en localStorage (trade-off con la redirección en 401)
+
+**Contexto:** La fase 06 exige que la sesión sobreviva al refresh de la página y que
+cualquier 401 limpie la sesión y redirija a `/login`. Había que elegir dónde vive el
+token: memoria, sessionStorage o localStorage.
+
+**Decisión:** El token y el `usuario` (JSON) se guardan en `localStorage` con claves
+`mesasitec.accessToken` / `mesasitec.usuario`. El store de auth inicializa su estado
+desde ahí (lectura síncrona en el guard del router, que no puede ser async para esto)
+y `cargarMe()` valida el token contra `/me` al recargar; si el token expiró, el
+interceptor de 401 lo limpia y redirige.
+
+**Alternativa descartada:** (a) Memoria pura (variable del store): sobrevive al refresh
+no — habría que re-loginear. (b) `sessionStorage`: el DoD pide que la sesión se
+mantenga al recargar, y aunque `sessionStorage` sobrevive al F5, se pierde al abrir una
+nueva pestaña; además no aporta ventajas de seguridad reales frente a `localStorage`
+frente a XSS.
+
+**Por qué:** `localStorage` es el mecanismo estándar para sesión persistente en SPAs y
+permite que el guard de rutas decida de forma síncrona antes de renderizar. El riesgo
+de XSS se mitiga con la práctica del proyecto de no usar `v-html` y mantener el
+cliente HTTP único; el trade-off queda explícito: persistencia a cambio de no poder
+invalidar el token desde el navegador salvo por 401.
+
+**Alcance:** `frontend/src/api/http.ts`, `frontend/src/stores/auth.ts`, `frontend/src/main.ts`.
+
+---
+
+## [2026-07-31] — Cliente HTTP con fetch nativo y manejador de 401 desacoplado
+
+**Contexto:** La fase pide un único módulo HTTP que inyecte el token y redirija a
+`/login` en cualquier 401. Había que decidir el cliente (fetch vs axios) y cómo
+notificar la redirección sin crear un import circular entre `api/http.ts` y el store
+de auth (el store llama al cliente, y el cliente necesitaría al store para cerrar
+sesión).
+
+**Decisión:** `fetch` nativo en `src/api/http.ts` con una función
+`request<T>(path, options)` tipada. La redirección por 401 no se resuelve importando
+el store: `main.ts` registra un callback (`registrarManejadorNoAutenticado`) que
+limpia la sesión, muestra el toast y navega. La opción `skipUnauthorizedRedirect`
+evita la redirección en el propio `POST /auth/login`, donde un 401 significa
+"credenciales inválidas" y la vista debe mostrar `login-error`.
+
+**Alternativa descartada:** (a) `axios` con interceptores: agrega una dependencia que
+el scaffold no tenía; la redirección en el interceptor tendría el mismo problema de
+acople y habría que tipar `AxiosError` a mano igual. (b) Importar el store de auth
+dentro de `http.ts`: genera un ciclo `http → store → api/auth → http`.
+
+**Por qué:** `fetch` ya cubre todo lo que la fase pide (headers, JSON, manejo de
+errores) y el callback registrado rompe el ciclo de dependencias manteniendo el 401
+manejado en un solo lugar. El `Content-Type` se setea a `application/json` en toda
+petición y el error del servidor se parsea a `ApiError` (codigo/status/detail/errores)
+para mostrar el mensaje de la API en `login-error`.
+
+**Alcance:** `frontend/src/api/http.ts`, `frontend/src/api/{auth,categorias,solicitudes}.ts`,
+`frontend/src/main.ts`, `frontend/src/views/LoginView.vue`.
+
+---
+
+## [2026-07-31] — Base URL absoluta de la API en el cliente HTTP
+
+**Contexto:** `vite.config.ts` define un proxy de `/api` → `http://localhost:5080`,
+pero la fase 06 especifica el cliente con base `http://localhost:5080/api/v1` y el
+contrato fija esa base. Ambas rutas conviven en el scaffold.
+
+**Decisión:** El cliente HTTP usa la URL absoluta `http://localhost:5080/api/v1`
+(expuesta como constante `API_BASE_URL`), como indica la fase. La comunicación
+funciona por CORS (la API ya habilita `http://localhost:5173` con `AllowAnyHeader` y
+`AllowAnyMethod`).
+
+**Alternativa descartada:** Usar rutas relativas `/api/v1/...` apoyadas en el proxy de
+Vite. Funciona en dev pero cambia la forma de las peticiones según el entorno y aleja
+el código del literal de la fase; el proxy queda disponible para despliegues que lo
+necesiten.
+
+**Por qué:** La fase y el contrato son la fuente de verdad; una constante única
+permite cambiar de estrategia (relativo o por variable de entorno) en un solo lugar.
+
+**Alcance:** `frontend/src/api/http.ts`.
