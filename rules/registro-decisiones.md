@@ -363,3 +363,111 @@ a `ContentRootPath` hace el path determinista en el flujo normal de ejecución.
 
 **Alcance:** `backend/src/Api/Program.cs` (resolución de connection string). No se tocó
 `DesignTimeDbContextFactory.cs` (ruta relativa, solo para tooling de migraciones).
+
+---
+
+## [2026-07-31] — Máquina de estados como diccionario estático en una clase de reglas dedicada
+
+**Contexto:** RN-02 define la tabla de transiciones y la fase 04 pedía modelarla a mano
+sin librerías (prohibido Stateless). Había que decidir dónde vive: métodos en la entidad
+`Solicitud` (POCO anémico usado por EF) o una clase de reglas separada.
+
+**Decisión:** Se creó `Dominio/Reglas/MaquinaEstadosSolicitud` como clase estática con un
+`Dictionary<(EstadoSolicitud, string accion), EstadoSolicitud>` que replica la tabla de
+RN-02 literalmente (incluida la reasignación `Asignada→Asignada` y `EnProceso→Asignada`).
+`AplicarAccion` devuelve el estado destino o lanza `ExcepcionTransicionInvalida` (409,
+`TRANSICION_INVALIDA`). Los nombres de acción son constantes tipadas en
+`AccionesSolicitud` para no dispersar strings mágicos entre capas.
+
+**Alternativa descartada:** Modelar las transiciones como métodos en `Solicitud`
+(`Solicitud.Asignar()`, `Solicitud.Cancelar()`, etc.). Se descartó porque `Solicitud` es
+un POCO de persistencia (migraciones y EF ya lo usan) y mezclar comportamiento con
+persistencia complica la prueba aislada y el mantenimiento. Un switch anidado en el
+controller tampoco — la lógica debe vivir en Dominio/ según la arquitectura.
+
+**Por qué:** El diccionario es declarativo, se lee igual que la tabla de RN-02 (fácil de
+verificar contra el enunciado), es 100% testeable sin HTTP/DB y responde la pregunta de
+entrevista de "cómo modelaste la máquina de estados" con una respuesta concreta.
+
+**Alcance:** `Dominio/Reglas/MaquinaEstadosSolicitud.cs`, `Dominio/Reglas/AccionesSolicitud.cs`,
+`Dominio/Excepciones/ExcepcionTransicionInvalida.cs`.
+
+---
+
+## [2026-07-31] — Tabla de permisos como función pura rol × acción en Dominio/Reglas
+
+**Contexto:** RN-03 define permisos cruzando rol y estado de la solicitud (p. ej. un
+Solicitante solo edita las propias y solo en estado `Nueva`). Había que decidir si la
+validación vive en un atributo `[RequierePermiso]`, en un servicio de aplicación o en una
+función de dominio.
+
+**Decisión:** `Dominio/Reglas/PermisosSolicitud` expone `EsPermitido(rol, accion, esPropia,
+estado)` y `Verificar(...)` que lanza `ExcepcionOperacionNoPermitida` (403,
+`OPERACION_NO_PERMITIDA`). La tabla RN-03 se codifica como un `switch` sobre la acción:
+acciones de flujo (`asignar/iniciar/resolver/reabrir`) solo Admin/Agente; `cancelar` solo
+Admin; `cerrar/ver` todos pero el Solicitante solo lo propio; `editar` el Solicitante solo
+lo propio y en `Nueva`. El `estado` se pasa como parámetro porque la acción por sí sola no
+determina el permiso del Solicitante.
+
+**Alternativa descartada:** (a) Atributo `[RequierePermiso]` en los endpoints: no puede
+evaluar condiciones dependientes del estado de la solicitud, que solo se conoce tras
+recuperarla de la base. (b) Tabla de permisos en la base de datos: agrega infraestructura
+sin valor aquí — la matriz es fija y pequeña.
+
+**Por qué:** Centralizar en Dominio/ permite probar las 6 combinaciones críticas sin
+levantar la API, y la fase 05 solo tendrá que combinar `PermisosSolicitud.Verificar` +
+`MaquinaEstadosSolicitud.AplicarAccion` (RN-03 ∩ RN-02).
+
+**Alcance:** `Dominio/Reglas/PermisosSolicitud.cs`,
+`Dominio/Excepciones/ExcepcionOperacionNoPermitida.cs`.
+
+---
+
+## [2026-07-31] — SLA con factores por prioridad y vencimiento calculado con "ahora" explícito
+
+**Contexto:** RN-04 exige `fechaCreacion + (categoria.slaHoras × factor[prioridad])`,
+recalcular al cambiar prioridad/categoría sin tocar `fechaCreacion`, y definir "vencida"
+(límite pasado y estado no final). El dominio debe ser puro y testeable (sin `DateTime.Now`).
+
+**Decisión:** `Dominio/Reglas/CalculadorSla` expone `Calcular(fechaCreacion, slaHoras,
+prioridad)` y `Recalcular(...)` (ambos basados en la `fechaCreacion` original; el
+recalculo nunca la muta — la prueba lo verifica). Los factores son un diccionario
+`{Critica: 0.5, Alta: 0.75, Media: 1.0, Baja: 2.0}`. `EstaVencida(fechaLimiteSla, estado,
+ahora)` recibe `ahora` como parámetro en vez de llamar a `DateTime.UtcNow` interno, lo que
+la hace determinista en pruebas y fuerza la convención UTC desde la capa de aplicación.
+
+**Alternativa descartada:** Calcular dentro de `Solicitud` o del servicio de aplicación.
+Se descartó por la misma razón que la máquina de estados: la regla vive en Dominio/ y el
+POCO de EF no muta fechas por sí mismo.
+
+**Por qué:** Factorizar el recálculo como función pura sobre `fechaCreacion` garantiza por
+construcción que el cambio de prioridad/categoría no altera la fecha de creación; la
+prueba de regresión lo asegura a futuro. Los tests usan `Kind=Utc` y valores exactos
+(8×0.5=4h, 24×2.0=48h) para no depender de precisión de punto flotante en horas.
+
+**Alcance:** `Dominio/Reglas/CalculadorSla.cs`, `tests/Dominio/SlaTests.cs`.
+
+---
+
+## [2026-07-31] — Excepciones de dominio con código del contrato heredadas de ExcepcionNegocio
+
+**Contexto:** La fase 04 exige que las violaciones de reglas sean mapeables a los códigos
+del contrato (409 `TRANSICION_INVALIDA`, 403 `OPERACION_NO_PERMITIDA`) y que ninguna prueba
+levante la API.
+
+**Decisión:** Se crearon `ExcepcionTransicionInvalida` y `ExcepcionOperacionNoPermitida`
+heredando de `ExcepcionNegocio`, que ya lleva `Codigo`/`Status`/`Detail`. El `ErrorHandler`
+de la fase 03 mapea `ExcepcionNegocio` genéricamente, así que ambas se serializan como
+`application/problem+json` sin tocar la capa API en esta fase. Los tests verifican el
+`Codigo` y el `Status` literales.
+
+**Alternativa descartada:** Lanzar `ExcepcionNegocio` directamente con strings inline. Se
+descartó porque los mensajes de transición construidos con el estado/acción actuales
+quedan centralizados en cada excepción y la semántica queda legible en `Dominio/`.
+
+**Por qué:** El contrato exige `codigo` literal en toda respuesta 4xx/5xx; tipar cada
+violación como excepción propia hace imposible que un futuro controller emita un código
+equivocado y mantiene el "¿qué pasa si lanzo esto?" en un solo lugar.
+
+**Alcance:** `Dominio/Excepciones/ExcepcionTransicionInvalida.cs`,
+`Dominio/Excepciones/ExcepcionOperacionNoPermitida.cs`.
