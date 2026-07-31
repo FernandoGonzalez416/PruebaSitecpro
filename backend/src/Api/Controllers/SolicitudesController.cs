@@ -60,4 +60,8 @@ public class SolicitudesController : ControllerBase
     [HttpPut("solicitudes/{id:guid}")]
     public async Task<ActionResult<SolicitudDto>> Actualizar(Guid id, [FromBody] SolicitudRequest request) =>
         Ok(await _servicio.ActualizarAsync(id, request, User.TenantId(), User.Rol(), User.UsuarioId()));
+
+    [HttpPost("solicitudes/{id:guid}/transiciones")]
+    public async Task<ActionResult<SolicitudDto>> Transicionar(Guid id, [FromBody] TransicionRequest request) =>
+        Ok(await _servicio.EjecutarTransicionAsync(id, request, User.TenantId(), User.Rol(), User.UsuarioId()));
 }

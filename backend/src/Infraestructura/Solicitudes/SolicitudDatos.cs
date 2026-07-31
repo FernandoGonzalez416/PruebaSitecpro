@@ -25,6 +25,10 @@ public class SolicitudDatos : ISolicitudDatos
         _db.Categorias.AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == id && c.TenantId == tenantId);
 
+    public Task<Usuario?> BuscarAgenteAsync(Guid id, Guid tenantId) =>
+        _db.Usuarios.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == id && u.TenantId == tenantId);
+
     public Task<int> ContarPorOrgYAnioAsync(Guid tenantId, int anio)
     {
         var inicio = new DateTime(anio, 1, 1, 0, 0, 0, DateTimeKind.Utc);

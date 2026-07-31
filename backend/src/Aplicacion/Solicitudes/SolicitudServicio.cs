@@ -125,6 +125,74 @@ public class SolicitudServicio : ISolicitudServicio
         return ConstruirDetalle(solicitud, DateTime.UtcNow);
     }
 
+    public async Task<SolicitudDto> EjecutarTransicionAsync(
+        Guid id, TransicionRequest request, Guid tenantId, RolUsuario rol, Guid usuarioId)
+    {
+        var solicitud = await ObtenerDeLaOrganizacionAsync(id, tenantId);
+        var accion = request.Accion!;
+
+        if (!AccionesSolicitud.Validas.Contains(accion))
+        {
+            throw new ExcepcionTransicionInvalida(solicitud.Estado, accion);
+        }
+
+        PermisosSolicitud.Verificar(rol, accion, esPropia: solicitud.SolicitanteId == usuarioId, solicitud.Estado);
+
+        solicitud.Estado = MaquinaEstadosSolicitud.AplicarAccion(solicitud.Estado, accion);
+
+        switch (accion)
+        {
+            case AccionesSolicitud.Asignar:
+                var agente = request.AgenteId is null
+                    ? null
+                    : await _datos.BuscarAgenteAsync(request.AgenteId.Value, tenantId);
+
+                if (agente is null || !agente.Activo || agente.Rol is not (RolUsuario.Agente or RolUsuario.Admin))
+                {
+                    throw new ExcepcionNegocio(
+                        codigo: "AGENTE_INVALIDO",
+                        message: "El agente indicado no es válido.",
+                        status: 422,
+                        detail: "El agente debe existir, estar activo, pertenecer a la organización y tener rol Agente o Admin.");
+                }
+
+                solicitud.AgenteId = agente.Id;
+                solicitud.Agente = agente;
+                break;
+
+            case AccionesSolicitud.Resolver:
+                if (string.IsNullOrWhiteSpace(request.Motivo) || request.Motivo.Trim().Length < 20)
+                {
+                    throw new ExcepcionNegocio(
+                        codigo: "MOTIVO_REQUERIDO",
+                        message: "El motivo de resolución es requerido.",
+                        status: 422,
+                        detail: "El motivo debe tener al menos 20 caracteres.");
+                }
+
+                solicitud.MotivoResolucion = request.Motivo.Trim();
+                solicitud.FechaResolucion = DateTime.UtcNow;
+                break;
+
+            case AccionesSolicitud.Cancelar:
+                if (string.IsNullOrWhiteSpace(request.Motivo) || request.Motivo.Trim().Length < 10)
+                {
+                    throw new ExcepcionNegocio(
+                        codigo: "MOTIVO_REQUERIDO",
+                        message: "El motivo de cancelación es requerido.",
+                        status: 422,
+                        detail: "El motivo debe tener al menos 10 caracteres.");
+                }
+
+                solicitud.MotivoCancelacion = request.Motivo.Trim();
+                break;
+        }
+
+        await _datos.GuardarAsync(solicitud);
+
+        return ConstruirDetalle(solicitud, DateTime.UtcNow);
+    }
+
     private async Task<Solicitud> ObtenerDeLaOrganizacionAsync(Guid id, Guid tenantId)
     {
         var solicitud = await _datos.BuscarPorIdAsync(id, tenantId);
