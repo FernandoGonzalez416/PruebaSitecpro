@@ -9,4 +9,5 @@ public interface ISolicitudServicio
     Task<ListadoSolicitudesResponse> ListarAsync(ConsultaListadoSolicitudes consulta, Guid tenantId, RolUsuario rol, Guid usuarioId);
     Task<SolicitudDto> ObtenerAsync(Guid id, Guid tenantId, RolUsuario rol, Guid usuarioId);
     Task<SolicitudDto> CrearAsync(SolicitudRequest request, Guid tenantId, Guid solicitanteId);
+    Task<SolicitudDto> ActualizarAsync(Guid id, SolicitudRequest request, Guid tenantId, RolUsuario rol, Guid usuarioId);
 }

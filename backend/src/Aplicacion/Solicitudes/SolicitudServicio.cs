@@ -99,6 +99,32 @@ public class SolicitudServicio : ISolicitudServicio
         return ConstruirDetalle(creada!, ahora);
     }
 
+    public async Task<SolicitudDto> ActualizarAsync(Guid id, SolicitudRequest request, Guid tenantId, RolUsuario rol, Guid usuarioId)
+    {
+        var solicitud = await ObtenerDeLaOrganizacionAsync(id, tenantId);
+        PermisosSolicitud.Verificar(rol, AccionesSolicitud.Editar, esPropia: solicitud.SolicitanteId == usuarioId, solicitud.Estado);
+
+        var categoria = await ObtenerCategoriaDeLaOrganizacionAsync(request.CategoriaId!.Value, tenantId);
+
+        var cambiaSla = solicitud.Prioridad != request.Prioridad!.Value || solicitud.CategoriaId != categoria.Id;
+        var estadoFinal = solicitud.Estado is EstadoSolicitud.Resuelta or EstadoSolicitud.Cerrada or EstadoSolicitud.Cancelada;
+
+        solicitud.Titulo = request.Titulo!;
+        solicitud.Descripcion = request.Descripcion!;
+        solicitud.CategoriaId = categoria.Id;
+        solicitud.Prioridad = request.Prioridad!.Value;
+
+        if (cambiaSla && !estadoFinal)
+        {
+            solicitud.FechaLimiteSla = CalculadorSla.Recalcular(
+                solicitud.FechaCreacion, categoria.SlaHoras, solicitud.Prioridad);
+        }
+
+        await _datos.GuardarAsync(solicitud);
+
+        return ConstruirDetalle(solicitud, DateTime.UtcNow);
+    }
+
     private async Task<Solicitud> ObtenerDeLaOrganizacionAsync(Guid id, Guid tenantId)
     {
         var solicitud = await _datos.BuscarPorIdAsync(id, tenantId);

@@ -56,4 +56,8 @@ public class SolicitudesController : ControllerBase
 
         return CreatedAtAction(nameof(Obtener), new { id = solicitud.Id }, solicitud);
     }
+
+    [HttpPut("solicitudes/{id:guid}")]
+    public async Task<ActionResult<SolicitudDto>> Actualizar(Guid id, [FromBody] SolicitudRequest request) =>
+        Ok(await _servicio.ActualizarAsync(id, request, User.TenantId(), User.Rol(), User.UsuarioId()));
 }
