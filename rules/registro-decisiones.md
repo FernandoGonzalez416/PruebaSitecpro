@@ -471,3 +471,99 @@ equivocado y mantiene el "¿qué pasa si lanzo esto?" en un solo lugar.
 
 **Alcance:** `Dominio/Excepciones/ExcepcionTransicionInvalida.cs`,
 `Dominio/Excepciones/ExcepcionOperacionNoPermitida.cs`.
+
+---
+
+## [2026-07-31] — `categoriaId` inexistente o de otra org → 404 en POST/PUT
+
+**Contexto:** Al crear/editar una solicitud, el contrato no define qué pasa si el
+cliente envía un `categoriaId` que no existe o que pertenece a otra organización. Las
+candidatas eran 404 (`RECURSO_NO_ENCONTRADO`) o 422 (`VALIDACION`/`PARAMETRO_INVALIDO`).
+
+**Decisión:** Tanto para `categoriaId` inexistente como para uno de otra org se responde
+**404 `RECURSO_NO_ENCONTRADO`**. El servicio consulta la categoría filtrando por
+`tenantId` del token (RN-01); si no hay fila, lanza `ExcepcionRecursoNoEncontrado`. El
+efecto es que un tenant no puede distinguir si una categoría ajena existe o no — misma
+semántica que los recursos de solicitudes.
+
+**Alternativa descartada:** 422 `PARAMETRO_INVALIDO` (el ID es sintácticamente un GUID
+válido, así que no es un error de formato) y 422 `RECURSO_NO_ENCONTRADO`… — se descartó
+porque el código del contrato es semánticamente de "no encontrado" y porque tratar la
+categoría como un recurso oculto por tenant es coherente con RN-01 (404, nunca 403).
+
+**Por qué:** Mantiene un único comportamiento "recurso ajeno = inexistente" en toda la
+API y no filtra información entre tenants. Además se pudo probar en runtime con una
+categoría de Bufete Sur enviada por un token de Cooperativa Norte → 404.
+
+**Alcance:** `Aplicacion/Solicitudes/SolicitudServicio.cs`, `Dominio/Excepciones/ExcepcionRecursoNoEncontrado.cs`.
+
+---
+
+## [2026-07-31] — Orden semántico de prioridad con CASE WHEN inline (Critica → Baja)
+
+**Contexto:** El contrato permite `sort=prioridad` y `sort=-prioridad` sobre solicitudes,
+pero "prioridad" es una enum (`Critica`, `Alta`, `Media`, `Baja`) que en SQLite se guarda
+como string: ordenar por el texto daría orden alfabético (`Alta < Baja < Critica <
+Media`), sin sentido de negocio.
+
+**Decisión:** `OrdenamientoSolicitudes` mapea `prioridad`/`-prioridad` a un
+`Expression<Func<Solicitud,int>>` que emite un ternario comparado con `0` (Critica=0,
+Alta=1, Media=2, Baja=3); EF Core lo traduce a un `CASE WHEN` y la ordenación ocurre en
+la base (server-side, sin cargar todo en memoria). El orden resultante es Critica →
+Alta → Media → Baja (y el inverso con `-`), verificado en runtime.
+
+**Alternativa descartada:** (a) Ordenar por el string de la enum — descartado por el
+orden alfabético absurdo. (b) Ordenar en memoria tras traer la página — viola la regla
+"todo server-side". (c) Un índice de prioridad calculado en el cliente — mismo motivo.
+
+**Por qué:** El `CASE WHEN` generado por el ternario es la forma más directa de que el
+orden de negocio lo resuelva la base y se comporte bien con la paginación.
+
+**Alcance:** `Aplicacion/Solicitudes/OrdenamientoSolicitudes.cs`,
+`Infraestructura/Solicitudes/SolicitudDatos.cs`.
+
+---
+
+## [2026-07-31] — RN-07 por conteo de filas del año en el rango + `{n+1:D5}`
+
+**Contexto:** RN-07 exige `SOL-{año}-{correlativo de 5 dígitos}` independiente por org y
+por año. El enunciado deja explícitamente fuera de alcance la infalibilidad ante
+concurrencia, pero había que elegir cómo obtener el correlativo.
+
+**Decisión:** `Dominio/Reglas/GeneradorCodigoSolicitud` recibe `año` y `totalDeFilasDelAño`
+y devuelve `SOL-{año}-{(total+1):D5}`. El servicio de aplicación cuenta las solicitudes
+de la org con `fechaCreacion` en el rango `[año, año+1)` y le pasa ese número. No existe
+tabla de secuencia ni columna de correlativo separada.
+
+**Alternativa descartada:** (a) Tabla `Correlativos(tenantId, año, ultimo)` con transacción
+y bloqueo: infalible, pero el enunciado dice que no hace falta y agrega infraestructura.
+(b) `MAX(Codigo)` con extracción del sufijo: frágil ante formatos y no maneja "huecos".
+
+**Por qué:** El conteo de filas es simple, determinista y suficiente para el alcance
+declarado; además el código queda como función pura testeable (5 tests en
+`GeneradorCodigoSolicitudTests`: reinicio por año, por org, padding a 5, formato).
+
+**Alcance:** `Dominio/Reglas/GeneradorCodigoSolicitud.cs`,
+`Aplicacion/Solicitudes/SolicitudServicio.cs`, `tests/Dominio/GeneradorCodigoSolicitudTests.cs`.
+
+---
+
+## [2026-07-31] — `sort` no soportado → 400 `PARAMETRO_INVALIDO`
+
+**Contexto:** El contrato define las claves de ordenamiento soportadas pero no dice qué
+devolver si el cliente envía un `sort` que no está en la lista (p. ej. `sort=zzz`).
+
+**Decisión:** Si la clave de orden no es una de las soportadas
+(`fechaCreacion`, `-fechaCreacion`, `prioridad`, `-prioridad`, `codigo`), el endpoint
+responde **400 `PARAMETRO_INVALIDO`** con detalle indicando las claves válidas. La
+validación vive en `OrdenamientoSolicitudes` (capa de aplicación), no en el controller.
+
+**Alternativa descartada:** Ignorar el `sort` desconocido y usar el default. Se descartó
+porque un cliente que pide ordenar por algo inexistente merece saberlo, y silenciar
+fallos de contrato es lo que las pruebas automáticas quieren detectar.
+
+**Por qué:** Coherente con el resto de parámetros inválidos de paginación (`page=0`,
+`pageSize=101`) que ya devolvían 400; unifica la semántica de "parámetro mal pedido".
+
+**Alcance:** `Aplicacion/Solicitudes/OrdenamientoSolicitudes.cs`,
+`Api/Controllers/SolicitudesController.cs`.

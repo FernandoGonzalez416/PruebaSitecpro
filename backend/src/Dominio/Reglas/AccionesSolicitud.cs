@@ -10,4 +10,9 @@ public static class AccionesSolicitud
     public const string Cancelar = "cancelar";
     public const string Ver = "ver";
     public const string Editar = "editar";
+
+    public static readonly string[] Validas =
+    {
+        Asignar, Iniciar, Resolver, Cerrar, Reabrir, Cancelar
+    };
 }

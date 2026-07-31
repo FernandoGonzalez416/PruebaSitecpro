@@ -48,4 +48,30 @@ public class MaquinaEstadosTests
         Assert.Equal("TRANSICION_INVALIDA", excepcion.Codigo);
         Assert.Equal(409, excepcion.Status);
     }
+
+    [Fact]
+    public void AplicarAccion_AccionDesconocida_LanzaExcepcionConCodigoDelContrato()
+    {
+        var excepcion = Assert.Throws<ExcepcionTransicionInvalida>(
+            () => MaquinaEstadosSolicitud.AplicarAccion(EstadoSolicitud.Nueva, "imprimir"));
+
+        Assert.Equal("TRANSICION_INVALIDA", excepcion.Codigo);
+        Assert.Equal(409, excepcion.Status);
+    }
+
+    [Fact]
+    public void AccionesValidas_ContienenLasSeisAccionesDelFlujo()
+    {
+        var esperadas = new[]
+        {
+            AccionesSolicitud.Asignar,
+            AccionesSolicitud.Iniciar,
+            AccionesSolicitud.Resolver,
+            AccionesSolicitud.Cerrar,
+            AccionesSolicitud.Reabrir,
+            AccionesSolicitud.Cancelar
+        };
+
+        Assert.Equal(esperadas, AccionesSolicitud.Validas);
+    }
 }
