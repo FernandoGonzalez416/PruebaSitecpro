@@ -681,3 +681,56 @@ el guard de secuencia hace el store determinista ante respuestas concurrentes
 sin complejidad adicional.
 
 **Alcance:** `frontend/src/stores/solicitudes.ts`, `frontend/src/views/solicitudes/ListadoView.vue`.
+
+---
+
+## [2026-07-31] — Lista de agentes para `modal-select-agente` como constante de la semilla
+
+**Contexto:** La fase 08 pide que `asignar` abra un modal con `modal-select-agente` (select con
+los agentes de la org). El contrato de API no expone ningún endpoint para listar usuarios de
+la organización (solo las 9 rutas documentadas), y AGENTS.md prohíbe inventar endpoints sin
+preguntar. La propia fase deja la decisión abierta: "obtener de una fuente razonable o
+documentar la omisión".
+
+**Decisión:** Se consultó al usuario, que eligió una **constante en el frontend**:
+`frontend/src/api/agentes.ts` define `AGENTES_SEMILLA` con los usuarios de rol `Admin` o
+`Agente` de la semilla (GUIDs fijos de `SeedIds.cs`: Administrador Norte, Agente Uno Norte,
+Agente Dos Norte, Administrador Sur) y expone `listarAgentesTenant(tenantId)` que filtra por
+el `tenantId` del token. El select se puebla solo con los agentes de la org del usuario
+(RN-01). Se documenta como limitación de la demo.
+
+**Alternativa descartada:** (a) Agregar un endpoint `GET /agentes` en el backend: agrega una
+ruta fuera del contrato literal (riesgo con las pruebas automáticas), mezcla backend en una
+fase frontend y viola AGENTS.md sin preguntar antes. (b) Derivar los agentes del listado de
+`GET /solicitudes`: fuente incompleta (las solicitudes en `Nueva` no tienen agente asignado)
+y dejaría el select vacío justo en el caso que más se usa.
+
+**Por qué:** La semilla es fija y conocida (los IDs viven en `SeedIds.cs`), así que una
+constante tipada es suficiente para la demo sin tocar el backend ni el contrato; en un
+entorno real esto vendría de un endpoint de directorio de usuarios, lo que queda declarado
+en `DECISIONES.md`.
+
+**Alcance:** `frontend/src/api/agentes.ts` (nuevo), `frontend/src/views/solicitudes/DetalleView.vue`.
+
+---
+
+## [2026-07-31] — Fechas del detalle formateadas con locale `es-ES` corto
+
+**Contexto:** El contrato entrega fechas ISO-8601 UTC con sufijo Z (ej.
+`2026-01-15T08:00:00Z`). La fase 08 permite mostrar el valor formateado en el `data-testid`
+manteniendo el valor exacto en el modelo.
+
+**Decisión:** `DetalleView.vue` formatea con
+`new Date(iso).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })` (mismo
+patrón que `ListadoView.vue`): p. ej. `15/1/2026, 9:00`. El objeto `solicitud` conserva la
+fecha ISO exacta; solo la presentación la convierte a la zona horaria local del navegador.
+
+**Alternativa descartada:** (a) Mostrar la ISO cruda: ilegible para un usuario final. (b)
+Convertir a un formato fijo con `Intl.DateTimeFormat` en `es-ES` con opciones explícitas
+día/mes/año: equivalente en resultado, pero `dateStyle`/`timeStyle` es menos código y ya es
+el patrón establecido en la fase 07.
+
+**Por qué:** Consistencia con el listado (una sola forma de leer fechas en la app) y legibilidad
+sin duplicar lógica de formateo; la fuente de verdad (ISO exacta) no se pierde.
+
+**Alcance:** `frontend/src/views/solicitudes/DetalleView.vue`.
