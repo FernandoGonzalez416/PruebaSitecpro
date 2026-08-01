@@ -787,3 +787,17 @@ podrá guardar. Usar el `id` de la respuesta (no el de la URL) respeta la fase: 
 código se genera en el servidor y no lo conocemos antes.
 
 **Alcance:** `frontend/src/views/solicitudes/FormularioView.vue`, `frontend/src/components/SolicitudForm.vue`.
+
+---
+
+## [2026-07-31] — Entrega: README reproducible en 4 comandos, DECISIONES curada y docker-compose opcional
+
+**Contexto:** La fase 10 exige README con levantamiento en ≤4 comandos y <5 minutos, `DECISIONES.md` de máximo 1 página con los 4 puntos de la sección 8.4, y docker-compose opcional. El registro de trabajo (`rules/registro-decisiones.md`) acumulaba ~30 entradas: demasiado para el documento de entrega.
+
+**Decisión:** `DECISIONES.md` curado a las 3 decisiones más importantes (reglas de negocio como funciones puras en Dominio/, contrato de errores con `codigo` obligatorio, persistencia determinista en SQLite), cada una con alternativa descartada; se declara IA vs a mano, qué se haría distinto con una semana más y los 4 atascos reales. El README documenta 4 comandos exactos (backend con `JWT_SECRET`, frontend con `npm install` + `npm run dev`), credenciales semilla y una declaración honesta de lo no implementado (agentes como constante del frontend, correlativo RN-07 por conteo sin infalibilidad ante concurrencia, sin filtro `agenteId` en el frontend, sin E2E automatizadas). Se agregó `docker-compose.yml` con API (volumen para el `.db`, `JWT_SECRET` de ejemplo) y frontend servido por nginx.
+
+**Alternativa descartada:** (a) Volcar el registro completo en `DECISIONES.md` — excede la página exigida. (b) Omitir el docker-compose — el enunciado suma puntos y con Dockerfiles multi-stage es de bajo costo. (c) Declarar "no me atasqué" — falso y mala respuesta de entrevista.
+
+**Por qué:** El checklist de la sección 11 penaliza omisiones no declaradas (resta el doble); un README verificado contra la API real (health 200, swagger con 9 endpoints, seed automático, RN-01 → 404) garantiza que los 4 comandos funcionan de punta a punta.
+
+**Alcance:** `README.md`, `DECISIONES.md`, `docker-compose.yml`, `backend/Dockerfile`, `frontend/Dockerfile`, `.dockerignore` de ambos proyectos.

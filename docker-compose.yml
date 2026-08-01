@@ -1,0 +1,28 @@
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mesasitec-api
+    ports:
+      - "5080:5080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:5080
+      JWT_SECRET: super-secreto-cambiar-en-produccion-de-al-menos-32-caracteres
+      ConnectionStrings__Default: Data Source=/app/data/mesasitec.db
+    volumes:
+      - mesasitec-data:/app/data
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mesasitec-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
+volumes:
+  mesasitec-data:
