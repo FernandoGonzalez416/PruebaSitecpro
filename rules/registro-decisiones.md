@@ -734,3 +734,56 @@ el patrón establecido en la fase 07.
 sin duplicar lógica de formateo; la fuente de verdad (ISO exacta) no se pierde.
 
 **Alcance:** `frontend/src/views/solicitudes/DetalleView.vue`.
+
+---
+
+## [2026-07-31] — Validación del formulario a mano al intentar enviar (sin librería)
+
+**Contexto:** La fase 09 pide validación en cliente (título 5–120, descripción 10–4000,
+categoría y prioridad requeridas) con los `data-testid` `error-titulo`, `error-descripcion`,
+`error-categoria`, y deja abierto el formato: "a mano vs. librería como Vuelidate/zod".
+
+**Decisión:** Validación **a mano** en `SolicitudForm.vue`, disparada al **intentar enviar**
+(solo al submit, no al perder el foco). Cada `error-*` se renderiza con `v-if` y `role="alert"`
+solo cuando hay error. Los errores de la API (422 `VALIDACION` con `errores` en camelCase:
+`titulo`, `descripcion`, `categoriaId`) se mapean a los mismos campos por `data-testid`;
+otros errores (403, 404, etc.) van a `toast-mensaje`.
+
+**Alternativa descargada:** (a) Vuelidate/zod: agrega una dependencia de runtime para reglas
+que son un `if` por campo, sin ganancia de corrección ni de mensajes (los mensajes se
+personalizan igual). (b) Validar al perder el foco: cambia el comportamiento según el flujo
+de la prueba (que dispara el submit), complica el ciclo de prueba y no aporta valor frente a
+validar al enviar.
+
+**Por qué:** Es la misma filosofía del resto del frontend (login valida en el submit), no
+introduce dependencias y los mensajes salen exactos como los valida el backend. Al reutilizar
+`ApiError.errores` (ya tipado en `types/api.ts`), la validación servidor-cliente queda
+consistente y sin duplicar reglas.
+
+**Alcance:** `frontend/src/components/SolicitudForm.vue`.
+
+---
+
+## [2026-07-31] — Guard de edición en la vista y navegación al detalle tras guardar
+
+**Contexto:** La fase 09 pide que un Solicitante no pueda editar solicitudes ajenas o en
+estado distinto de `Nueva` (RN-03), y que tras crear/editar se navegue al detalle.
+
+**Decisión:** La restricción se implementa en `FormularioView.vue`, no en el componente:
+en modo edición, la vista carga el detalle con `GET /solicitudes/{id}` y aplica la misma
+regla `puedeEditar` de la fase 08 (Admin/Agente → sí; Solicitante → solo propias y estado
+`Nueva`). Si no aplica, redirige al detalle con `toast-mensaje`; si el `GET` falla (404/403
+por RN-01/RN-03), redirige a `/solicitudes`. Al guardar, el componente emite `guardado(id)`
+con el `id` de la respuesta (POST 201 o PUT 200) y la vista navega a `/solicitudes/{id}`.
+
+**Alternativa descargada:** (a) Poner el guard en el router global: necesitaría resolver la
+solicitud antes de la ruta y duplicar lógica que ya vive en `puedeEditar`. (b) Dejar solo la
+validación del backend: el backend ya devuelve 403 `OPERACION_NO_PERMITIDA`, pero la fase
+pide evitar la UX incorrecta antes de mostrar el formulario.
+
+**Por qué:** El backend sigue siendo la fuente de verdad (RN-03 se valida también en
+`PermisosSolicitud.EsPermitido`), pero el frontend evita renderizar un formulario que no se
+podrá guardar. Usar el `id` de la respuesta (no el de la URL) respeta la fase: en creación el
+código se genera en el servidor y no lo conocemos antes.
+
+**Alcance:** `frontend/src/views/solicitudes/FormularioView.vue`, `frontend/src/components/SolicitudForm.vue`.
