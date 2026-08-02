@@ -28,11 +28,18 @@ public class SolicitudServicio : ISolicitudServicio
     {
         if (consulta.Page < 1 || consulta.PageSize < 1 || consulta.PageSize > 100)
         {
+            var errores = new Dictionary<string, string[]>();
+            if (consulta.Page < 1)
+                errores["page"] = new[] { "page debe ser mayor o igual a 1." };
+            if (consulta.PageSize < 1 || consulta.PageSize > 100)
+                errores["pageSize"] = new[] { "pageSize debe estar entre 1 y 100." };
+
             throw new ExcepcionNegocio(
                 codigo: "PARAMETRO_INVALIDO",
                 message: "Los parámetros de paginación están fuera de rango.",
                 status: 400,
-                detail: "page debe ser mayor o igual a 1 y pageSize debe estar entre 1 y 100.");
+                detail: "page debe ser mayor o igual a 1 y pageSize debe estar entre 1 y 100.",
+                errores: errores);
         }
 
         if (!OrdenamientoSolicitudes.EsValido(consulta.Sort))
@@ -41,7 +48,11 @@ public class SolicitudServicio : ISolicitudServicio
                 codigo: "PARAMETRO_INVALIDO",
                 message: "El parámetro sort no es válido.",
                 status: 400,
-                detail: $"Valores permitidos: {string.Join(", ", OrdenamientoSolicitudes.Default, OrdenamientoSolicitudes.Codigo, OrdenamientoSolicitudes.Prioridad, OrdenamientoSolicitudes.PrioridadDesc, OrdenamientoSolicitudes.FechaCreacion)}.");
+                detail: $"Valores permitidos: {string.Join(", ", OrdenamientoSolicitudes.Default, OrdenamientoSolicitudes.Codigo, OrdenamientoSolicitudes.Prioridad, OrdenamientoSolicitudes.PrioridadDesc, OrdenamientoSolicitudes.FechaCreacion)}.",
+                errores: new Dictionary<string, string[]>
+                {
+                    ["sort"] = new[] { "El parámetro sort no es válido." }
+                });
         }
 
         Guid? solicitanteId = rol == RolUsuario.Solicitante ? usuarioId : null;

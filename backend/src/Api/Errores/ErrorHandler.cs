@@ -21,6 +21,7 @@ public class ErrorHandler : IExceptionHandler
         var status = StatusCodes.Status500InternalServerError;
         var title = "Error interno del servidor";
         var detail = "Ocurrió un error inesperado.";
+        Dictionary<string, string[]>? errores = null;
 
         switch (exception)
         {
@@ -35,22 +36,29 @@ public class ErrorHandler : IExceptionHandler
                 status = ex.Status;
                 title = ex.Message;
                 detail = ex.Detail;
+                errores = ex.Errores;
                 break;
             default:
                 _logger.LogError(exception, "Excepción no controlada en la API");
                 break;
         }
 
+        var cuerpo = new Dictionary<string, object?>
+        {
+            ["type"] = $"https://mesasitec.local/errores/{CodigoAKebab(codigo)}",
+            ["title"] = title,
+            ["status"] = status,
+            ["detail"] = detail,
+            ["codigo"] = codigo
+        };
+        if (errores is { Count: > 0 })
+        {
+            cuerpo["errores"] = errores;
+        }
+
         httpContext.Response.StatusCode = status;
         await httpContext.Response.WriteAsJsonAsync(
-            new
-            {
-                type = $"https://mesasitec.local/errores/{CodigoAKebab(codigo)}",
-                title,
-                status,
-                detail,
-                codigo
-            },
+            cuerpo,
             options: null,
             contentType: "application/problem+json",
             cancellationToken);
