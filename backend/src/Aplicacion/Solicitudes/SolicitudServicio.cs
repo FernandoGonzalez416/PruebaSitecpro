@@ -122,7 +122,8 @@ public class SolicitudServicio : ISolicitudServicio
 
         await _datos.GuardarAsync(solicitud);
 
-        return ConstruirDetalle(solicitud, DateTime.UtcNow);
+        var actualizada = await _datos.BuscarPorIdAsync(solicitud.Id, tenantId);
+        return ConstruirDetalle(actualizada!, DateTime.UtcNow);
     }
 
     public async Task<SolicitudDto> EjecutarTransicionAsync(
@@ -157,7 +158,6 @@ public class SolicitudServicio : ISolicitudServicio
                 }
 
                 solicitud.AgenteId = agente.Id;
-                solicitud.Agente = agente;
                 break;
 
             case AccionesSolicitud.Resolver:
@@ -190,7 +190,8 @@ public class SolicitudServicio : ISolicitudServicio
 
         await _datos.GuardarAsync(solicitud);
 
-        return ConstruirDetalle(solicitud, DateTime.UtcNow);
+        var actualizada = await _datos.BuscarPorIdAsync(solicitud.Id, tenantId);
+        return ConstruirDetalle(actualizada!, DateTime.UtcNow);
     }
 
     private async Task<Solicitud> ObtenerDeLaOrganizacionAsync(Guid id, Guid tenantId)
