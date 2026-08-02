@@ -28,7 +28,6 @@ Fechas en UTC con `ValueConverter` ISO-8601 "O" (SQLite no preserva `DateTimeKin
 
 - Migrar la base a PostgreSQL para producción (SQLite quedó por portabilidad de la prueba).
 - Implementar `GET /agentes` real en el backend (hoy es una constante del frontend) y prueba E2E con Playwright.
-- Suite de integración automatizada sobre los 9 endpoints (hoy la verificación HTTP fue manual/semi-manual).
 - `refresh token` con rotación en vez de un solo JWT de 8 horas.
 
 ## 4 · Dónde se atascó el desarrollo y cómo se resolvió

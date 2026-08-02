@@ -801,3 +801,17 @@ código se genera en el servidor y no lo conocemos antes.
 **Por qué:** El checklist de la sección 11 penaliza omisiones no declaradas (resta el doble); un README verificado contra la API real (health 200, swagger con 9 endpoints, seed automático, RN-01 → 404) garantiza que los 4 comandos funcionan de punta a punta.
 
 **Alcance:** `README.md`, `DECISIONES.md`, `docker-compose.yml`, `backend/Dockerfile`, `frontend/Dockerfile`, `.dockerignore` de ambos proyectos.
+
+---
+
+## [2026-08-01] — Tests de integración HTTP sobre la API con WebApplicationFactory
+
+**Contexto:** El proyecto de tests (`MesaSitec.Tests`) solo referenciaba `Dominio`, `Aplicacion` e `Infraestructura`; los controllers de `Api`, el middleware de errores y el cableado JWT no tenían ninguna cobertura (0%). La verificación del contrato de los 9 endpoints había sido manual/semi-manual y se mencionaba en `DECISIONES.md` como "con una semana más". Se detectó además que los tests de integración requieren liberar el `.exe` de la API, bloqueado por el dev server corriendo.
+
+**Decisión:** Se agrega `Microsoft.AspNetCore.Mvc.Testing` 8.0.29 al proyecto de tests, se referencia `MesaSitec.Api`, y se crea `ApiWebApplicationFactory` que corre la app real con una base SQLite temporal por corrida (`Path.GetTempPath()` + GUID, borrada en `Dispose`) y config de JWT de prueba vía `ConfigureAppConfiguration`. Se expone el tipo `Program` con `public partial class Program { }` (patrón documentado para `WebApplicationFactory<TEntryPoint>`). La colección xUnit `ApiIntegracion` comparte la factory (una sola migración + seed). 23 tests cubren: health, login ok/fallo, `/me` con y sin token, categorías por tenant, listado paginado + filtros server-side (`estado`, `q`, `sort`, `page`/`pageSize`), aislamiento multi-tenant (RN-01 → 404, nunca 403), permisos RN-03 (403), crear con `Location`, validación 422 `VALIDACION`, edición con recálculo de SLA (RN-04), flujo completo de transiciones y los códigos de error `TRANSICION_INVALIDA` (409), `MOTIVO_REQUERIDO` (422) y `AGENTE_INVALIDO` (422).
+
+**Alternativa descartada:** (a) `InternalsVisibleTo` para no tocar `Program.cs` — el patrón `public partial class Program` es el estándar de Microsoft y deja el tipo público también para otros consumidores de test. (b) Base en memoria `DataSource=:memory:` — el `Program.cs` combina la ruta con `ContentRootPath` cuando no es absoluta y rompería el anclaje; una ruta temporal absoluta lo evita. (c) Cambiar `MigrateAsync`/seed para tests — no hace falta: una base fresca por corrida hace el arranque idéntico al real.
+
+**Por qué:** Los tests de integración ejercitan el contrato literal que evalúa el corrector (status, `codigo`, `application/problem+json`, camelCase, multi-tenant) y protegen la capa que era el mayor agujero de cobertura: `Api` pasa de 0% a ~95% y la corrida completa de 80 tests queda en verde. La verificación manual HTTP queda ahora como smoke test complementario, no como única prueba.
+
+**Alcance:** `backend/src/Api/Program.cs` (exposición de `Program`), `backend/tests/MesaSitec.Tests/MesaSitec.Tests.csproj` (paquete + referencia a Api), `backend/tests/MesaSitec.Tests/Integracion/{ApiWebApplicationFactory.cs, DtosApi.cs, ApiIntegracionTests.cs}`.

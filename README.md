@@ -70,7 +70,7 @@ Semilla: 2 organizaciones, 4 categorías por org, 25 solicitudes en Cooperativa 
 - **Reglas de negocio en `Dominio/`:** máquina de estados (RN-02) como diccionario, permisos por rol × estado (RN-03), SLA con recálculo por prioridad/categoría (RN-04), aislamiento multi-tenant (RN-01, recursos ajenos → 404), asignación validada (RN-05), motivos mínimos (RN-06), código `SOL-{año}-{correlativo5}` por org/año (RN-07).
 - **Errores:** toda respuesta 4xx/5xx en `application/problem+json` con campo `codigo` obligatorio.
 - **Frontend:** login, listado con filtros y paginación, detalle con acciones por estado/rol (botones no permitidos no se renderizan), crear/editar con validación en cliente y mapeo de errores de la API.
-- **Pruebas:** 56 pruebas xUnit (máquina de estados, SLA, permisos, generador de código, edición con recálculo de SLA, reasignación y validación de paginación). `dotnet test` en verde.
+- **Pruebas:** 80 pruebas xUnit (`dotnet test` en verde): 57 unitarias (máquina de estados, SLA, permisos, generador de código, edición con recálculo de SLA, reasignación y validación de paginación) + 23 de **integración HTTP** sobre los 9 endpoints con `WebApplicationFactory` y base de datos SQLite temporal (auth, multi-tenant, filtros server-side, transiciones y todos los códigos de error del contrato).
 
 ## Qué NO está implementado (declaración honesta)
 
@@ -82,7 +82,7 @@ Semilla: 2 organizaciones, 4 categorías por org, 25 solicitudes en Cooperativa 
 ## Verificación rápida
 
 ```powershell
-# Backend: pruebas unitarias
+# Backend: pruebas unitarias e integración HTTP (WebApplicationFactory)
 dotnet test
 
 # Frontend: typecheck estricto sin any explícito
