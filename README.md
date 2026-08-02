@@ -16,25 +16,27 @@ Mesa de servicio SaaS **multi-tenant**: varias organizaciones comparten la misma
 
 No se requiere SQLite instalado: la base es un archivo local que se migra y siembra solo al arrancar.
 
-## Levantamiento (4 comandos)
+## Levantamiento (4 comandos, < 5 minutos)
+
+Dos terminales. La base de datos se migra y siembra automáticamente en el primer arranque (`mesasitec.db` junto a la API). No hay pasos manuales.
 
 ```powershell
 # Terminal 1 — Backend (puerto 5080)
 cd backend
-$env:JWT_SECRET="super-secreto-cambiar-en-produccion-de-al-menos-32-caracteres"
 dotnet run --project src/Api
 
 # Terminal 2 — Frontend (puerto 5173)
 cd frontend
-npm install
-npm run dev
+npm install; npm run dev
 ```
 
-> El valor de `JWT_SECRET` debe tener al menos 32 caracteres. Alternativa: copiar `.env.example` como `.env` en la raíz del backend (o exportar `JWT_ISSUER`/`JWT_AUDIENCE`/`SEED_FECHA_BASE` si se desea personalizar).
->
-> En desarrollo, si no se define `JWT_SECRET`, la app usa el secreto de `appsettings.Development.json` (solo para desarrollo, nunca desplegar).
+> `npm install` solo corre la primera vez; en corridas siguientes basta `npm run dev`. En PowerShell, `;` separa comandos en la misma línea (en cmd.exe usar `&`).
 
-La base de datos se migra y siembra automáticamente en el primer arranque (`mesasitec.db` junto a la API). No hay pasos manuales.
+**Variables de entorno.** La app lee `JWT_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE` y `SEED_FECHA_BASE` desde variables de entorno (`.env.example` documenta los valores de ejemplo; la app no lee un archivo `.env`). `JWT_SECRET` es **obligatoria en producción** (mínimo 32 caracteres; si falta, la API falla al iniciar) y **opcional en desarrollo**: sin definirla se usa el fallback de `appsettings.Development.json` (solo desarrollo, nunca desplegar). Para definirla en PowerShell antes de `dotnet run`:
+
+```powershell
+$env:JWT_SECRET="super-secreto-cambiar-en-produccion-de-al-menos-32-caracteres"
+```
 
 ## URLs
 
@@ -68,7 +70,7 @@ Semilla: 2 organizaciones, 4 categorías por org, 25 solicitudes en Cooperativa 
 - **Reglas de negocio en `Dominio/`:** máquina de estados (RN-02) como diccionario, permisos por rol × estado (RN-03), SLA con recálculo por prioridad/categoría (RN-04), aislamiento multi-tenant (RN-01, recursos ajenos → 404), asignación validada (RN-05), motivos mínimos (RN-06), código `SOL-{año}-{correlativo5}` por org/año (RN-07).
 - **Errores:** toda respuesta 4xx/5xx en `application/problem+json` con campo `codigo` obligatorio.
 - **Frontend:** login, listado con filtros y paginación, detalle con acciones por estado/rol (botones no permitidos no se renderizan), crear/editar con validación en cliente y mapeo de errores de la API.
-- **Pruebas:** 52 pruebas xUnit (máquina de estados, SLA, permisos, generador de código). `dotnet test` en verde.
+- **Pruebas:** 56 pruebas xUnit (máquina de estados, SLA, permisos, generador de código, edición con recálculo de SLA, reasignación y validación de paginación). `dotnet test` en verde.
 
 ## Qué NO está implementado (declaración honesta)
 

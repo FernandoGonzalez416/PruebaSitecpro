@@ -7,7 +7,7 @@ Resumen ejecutivo del desarrollo. El registro completo y ampliado vive en `rules
 **1. Reglas de negocio como funciones puras en `Dominio/` (RN-02, RN-03, RN-04).**
 La máquina de estados es un diccionario estático que replica la tabla de transiciones (RN-02), los permisos un `switch` puro rol × acción × estado (RN-03) y el SLA una función con `ahora` explícito que recalcula sobre `fechaCreacion` (RN-04).
 *Alternativa descartada:* Stateless, atributos `[RequierePermiso]` o lógica en los controllers.
-*Por qué:* la lógica se prueba sin levantar la API (52 tests), la tabla se lee igual que el enunciado y los controllers quedan como orquestadores finos.
+*Por qué:* la lógica se prueba sin levantar la API (56 tests), la tabla se lee igual que el enunciado y los controllers quedan como orquestadores finos.
 
 **2. Contrato de errores con `codigo` obligatorio y `application/problem+json` (fase 03).**
 Un `IExceptionHandler` central mapea excepciones de dominio a su código/status, `InvalidModelStateResponseFactory` convierte el ModelState en 422 `VALIDACION`, y `MapInboundClaims = false` permite leer `sub` sin remapeos. El `Content-Type` problem+json se fija en el punto de escritura, no con `Response.ContentType` (lo sobrescribía `WriteAsJsonAsync`).
@@ -33,7 +33,7 @@ Fechas en UTC con `ValueConverter` ISO-8601 "O" (SQLite no preserva `DateTimeKin
 
 ## 4 · Dónde se atascó el desarrollo y cómo se resolvió
 
-- **Fase 03 — claims del JWT ilegibles:** el pipeline por defecto de JwtBearer remapeaba `sub` → `ClaimTypes.NameIdentifier` y `/me` devolvía `null`. Se resolvió con `MapInboundClaims = false` tras descartar limpiar el mapa estático global y solo cambiar `NameClaimType`.
-- **Fase 03 — errores sin `Content-Type` problem+json:** `WriteAsJsonAsync` sobrescribía el content-type seteado antes. Se detectó al inspeccionar cabeceras de respuestas reales y se resolvió pasando `contentType` como argumento.
-- **Fase 04 — SLA con SQLite:** SQLite devuelve fechas con `Kind=Unspecified`, rompiendo cálculos y serialización. Se resolvió con un `ValueConverter` que fuerza `Kind=Utc` en lectura.
-- **Fase 08 — sin endpoint de agentes:** el contrato no lo define. Se consultó al usuario y se optó por una constante tipada del frontend documentando la limitación.
+- **Fase 03 — claims del JWT ilegibles:** el pipeline por defecto de JwtBearer remapeaba `sub` → `ClaimTypes.NameIdentifier` y `/me` devolvía `null`. Se resolvió con `MapInboundClaims = false`.
+- **Fase 03 — errores sin `Content-Type` problem+json:** `WriteAsJsonAsync` sobrescribía el content-type seteado antes; se resolvió pasándolo como argumento en el punto de escritura.
+- **Fase 10 — PUT /solicitudes/{id} devolvía 500 al cambiar categoría (RN-04):** EF Core fixup nulleaba la navegación `Categoria` y `ConstruirDetalle` lanzaba `NullReferenceException`. Se resolvió re-consultando la solicitud tras `SaveChanges`, lo que además destapó un bug latente de identity de EF al reasignar el mismo agente (se corrigió seteando solo `AgenteId`).
+- **Cuelgues de sesión de desarrollo:** sesiones largas se interrumpían a mitad de tarea; se mitigó con pasos pequeños y verificables (test → build → prueba HTTP real) y registrando cada decisión.
