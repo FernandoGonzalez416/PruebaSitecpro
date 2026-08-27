@@ -17,8 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Aplicacion\MesaSitec.Aplicacion.csproj" />
-    <ProjectReference Include="..\Infraestructura\MesaSitec.Infraestructura.csproj" />
+    <ProjectReference Include="..\Aplicacion\HelpDesk.Aplicacion.csproj" />
+    <ProjectReference Include="..\Infraestructura\HelpDesk.Infraestructura.csproj" />
   </ItemGroup>
 
 </Project>

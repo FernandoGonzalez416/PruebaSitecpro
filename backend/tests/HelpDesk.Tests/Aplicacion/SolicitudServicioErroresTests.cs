@@ -1,27 +1,27 @@
-using MesaSitec.Aplicacion.Solicitudes;
-using MesaSitec.Dominio.Excepciones;
-using MesaSitec.Dominio.Entidades;
-using MesaSitec.Infraestructura.Data;
-using MesaSitec.Infraestructura.Solicitudes;
+using HelpDesk.Aplicacion.Solicitudes;
+using HelpDesk.Dominio.Excepciones;
+using HelpDesk.Dominio.Entidades;
+using HelpDesk.Infraestructura.Data;
+using HelpDesk.Infraestructura.Solicitudes;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
-namespace MesaSitec.Tests.Aplicacion;
+namespace HelpDesk.Tests.Aplicacion;
 
 public class SolicitudServicioErroresTests : IDisposable
 {
     private readonly SqliteConnection _conexion;
-    private readonly DbContextOptions<MesaSitecDbContext> _opciones;
+    private readonly DbContextOptions<HelpDeskDbContext> _opciones;
 
     public SolicitudServicioErroresTests()
     {
         _conexion = new SqliteConnection("DataSource=:memory:");
         _conexion.Open();
-        _opciones = new DbContextOptionsBuilder<MesaSitecDbContext>()
+        _opciones = new DbContextOptionsBuilder<HelpDeskDbContext>()
             .UseSqlite(_conexion)
             .Options;
 
-        using (var db = new MesaSitecDbContext(_opciones))
+        using (var db = new HelpDeskDbContext(_opciones))
         {
             db.Database.EnsureCreated();
         }
@@ -34,7 +34,7 @@ public class SolicitudServicioErroresTests : IDisposable
     {
         var tenantId = Guid.NewGuid();
 
-        using (var db = new MesaSitecDbContext(_opciones))
+        using (var db = new HelpDeskDbContext(_opciones))
         {
             var servicio = new SolicitudServicio(new SolicitudDatos(db));
 
@@ -66,7 +66,7 @@ public class SolicitudServicioErroresTests : IDisposable
     {
         var tenantId = Guid.NewGuid();
 
-        using (var db = new MesaSitecDbContext(_opciones))
+        using (var db = new HelpDeskDbContext(_opciones))
         {
             var servicio = new SolicitudServicio(new SolicitudDatos(db));
 

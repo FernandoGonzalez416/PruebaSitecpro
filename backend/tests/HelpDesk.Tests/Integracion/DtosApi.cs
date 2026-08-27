@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace MesaSitec.Tests.Integracion;
+namespace HelpDesk.Tests.Integracion;
 
 internal sealed record Problema(
     [property: JsonPropertyName("type")] string? Type,

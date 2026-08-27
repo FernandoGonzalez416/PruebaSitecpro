@@ -1,4 +1,4 @@
-# Datos semilla — MesaSitec
+# Datos semilla — HelpDesk
 
 ## Activación
 

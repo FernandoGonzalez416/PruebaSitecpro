@@ -1,16 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace MesaSitec.Infraestructura.Data;
+namespace HelpDesk.Infraestructura.Data;
 
-public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<MesaSitecDbContext>
+public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<HelpDeskDbContext>
 {
-    public MesaSitecDbContext CreateDbContext(string[] args)
+    public HelpDeskDbContext CreateDbContext(string[] args)
     {
-        var options = new DbContextOptionsBuilder<MesaSitecDbContext>()
-            .UseSqlite("Data Source=mesasitec.db")
+        var options = new DbContextOptionsBuilder<HelpDeskDbContext>()
+            .UseSqlite("Data Source=helpdesk.db")
             .Options;
 
-        return new MesaSitecDbContext(options);
+        return new HelpDeskDbContext(options);
     }
 }

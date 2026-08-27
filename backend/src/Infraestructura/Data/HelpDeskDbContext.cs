@@ -1,11 +1,11 @@
-using MesaSitec.Dominio.Entidades;
+using HelpDesk.Dominio.Entidades;
 using Microsoft.EntityFrameworkCore;
 
-namespace MesaSitec.Infraestructura.Data;
+namespace HelpDesk.Infraestructura.Data;
 
-public class MesaSitecDbContext : DbContext
+public class HelpDeskDbContext : DbContext
 {
-    public MesaSitecDbContext(DbContextOptions<MesaSitecDbContext> options)
+    public HelpDeskDbContext(DbContextOptions<HelpDeskDbContext> options)
         : base(options)
     {
     }

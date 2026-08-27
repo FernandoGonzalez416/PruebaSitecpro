@@ -1,6 +1,6 @@
-using MesaSitec.Dominio.Entidades;
+using HelpDesk.Dominio.Entidades;
 
-namespace MesaSitec.Aplicacion.Solicitudes.DTOs;
+namespace HelpDesk.Aplicacion.Solicitudes.DTOs;
 
 public class SolicitudListaItemDto
 {

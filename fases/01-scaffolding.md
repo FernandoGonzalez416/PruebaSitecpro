@@ -28,12 +28,12 @@ Dejar el repositorio con la estructura de carpetas obligatoria del enunciado y d
    ```
 3. **Backend** — crear solución y proyectos:
    ```powershell
-   dotnet new sln -n MesaSitec
-   dotnet new webapi -o src/Api -n MesaSitec.Api
-   dotnet new classlib -o src/Aplicacion -n MesaSitec.Aplicacion
-   dotnet new classlib -o src/Dominio -n MesaSitec.Dominio
-   dotnet new classlib -o src/Infraestructura -n MesaSitec.Infraestructura
-   dotnet new xunit -o tests/MesaSitec.Tests -n MesaSitec.Tests
+   dotnet new sln -n HelpDesk
+   dotnet new webapi -o src/Api -n HelpDesk.Api
+   dotnet new classlib -o src/Aplicacion -n HelpDesk.Aplicacion
+   dotnet new classlib -o src/Dominio -n HelpDesk.Dominio
+   dotnet new classlib -o src/Infraestructura -n HelpDesk.Infraestructura
+   dotnet new xunit -o tests/HelpDesk.Tests -n HelpDesk.Tests
    ```
    - Agregar todos al `.sln` y las referencias:
      - Api → Aplicacion, Infraestructura

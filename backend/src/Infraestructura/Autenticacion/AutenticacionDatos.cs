@@ -1,15 +1,15 @@
-using MesaSitec.Aplicacion.Autenticacion;
-using MesaSitec.Dominio.Entidades;
-using MesaSitec.Infraestructura.Data;
+using HelpDesk.Aplicacion.Autenticacion;
+using HelpDesk.Dominio.Entidades;
+using HelpDesk.Infraestructura.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace MesaSitec.Infraestructura.Autenticacion;
+namespace HelpDesk.Infraestructura.Autenticacion;
 
 public class AutenticacionDatos : IAutenticacionDatos
 {
-    private readonly MesaSitecDbContext _db;
+    private readonly HelpDeskDbContext _db;
 
-    public AutenticacionDatos(MesaSitecDbContext db)
+    public AutenticacionDatos(HelpDeskDbContext db)
     {
         _db = db;
     }

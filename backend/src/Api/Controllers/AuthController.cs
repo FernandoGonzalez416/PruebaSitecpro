@@ -1,11 +1,11 @@
 using System.Security.Claims;
-using MesaSitec.Aplicacion.Autenticacion;
-using MesaSitec.Aplicacion.Autenticacion.DTOs;
-using MesaSitec.Dominio.Excepciones;
+using HelpDesk.Aplicacion.Autenticacion;
+using HelpDesk.Aplicacion.Autenticacion.DTOs;
+using HelpDesk.Dominio.Excepciones;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace MesaSitec.Api.Controllers;
+namespace HelpDesk.Api.Controllers;
 
 [ApiController]
 [Route("api/v1")]

@@ -1,4 +1,4 @@
-namespace MesaSitec.Dominio.Reglas;
+namespace HelpDesk.Dominio.Reglas;
 
 public static class AccionesSolicitud
 {

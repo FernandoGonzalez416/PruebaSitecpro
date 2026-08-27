@@ -1,6 +1,6 @@
-using MesaSitec.Dominio.Entidades;
+using HelpDesk.Dominio.Entidades;
 
-namespace MesaSitec.Dominio.Reglas;
+namespace HelpDesk.Dominio.Reglas;
 
 public static class CalculadorSla
 {

@@ -1,4 +1,4 @@
-namespace MesaSitec.Infraestructura.Data.Semilla;
+namespace HelpDesk.Infraestructura.Data.Semilla;
 
 public static class SeedIds
 {

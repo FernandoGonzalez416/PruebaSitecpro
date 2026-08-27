@@ -1,6 +1,6 @@
-using MesaSitec.Dominio.Reglas;
+using HelpDesk.Dominio.Reglas;
 
-namespace MesaSitec.Tests.Dominio;
+namespace HelpDesk.Tests.Dominio;
 
 public class GeneradorCodigoSolicitudTests
 {

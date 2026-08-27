@@ -1,4 +1,4 @@
-namespace MesaSitec.Dominio.Excepciones;
+namespace HelpDesk.Dominio.Excepciones;
 
 public class ExcepcionNegocio : Exception
 {

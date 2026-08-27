@@ -1,8 +1,8 @@
 using System.Security.Claims;
-using MesaSitec.Dominio.Entidades;
-using MesaSitec.Dominio.Excepciones;
+using HelpDesk.Dominio.Entidades;
+using HelpDesk.Dominio.Excepciones;
 
-namespace MesaSitec.Api.Extensores;
+namespace HelpDesk.Api.Extensores;
 
 public static class ClaimsPrincipalExtensions
 {

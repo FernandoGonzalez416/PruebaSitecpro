@@ -1,10 +1,10 @@
-using MesaSitec.Aplicacion.Solicitudes;
-using MesaSitec.Aplicacion.Solicitudes.DTOs;
-using MesaSitec.Api.Extensores;
+using HelpDesk.Aplicacion.Solicitudes;
+using HelpDesk.Aplicacion.Solicitudes.DTOs;
+using HelpDesk.Api.Extensores;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace MesaSitec.Api.Controllers;
+namespace HelpDesk.Api.Controllers;
 
 [ApiController]
 [Route("api/v1")]

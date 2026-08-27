@@ -1,6 +1,6 @@
-using MesaSitec.Dominio.Entidades;
+using HelpDesk.Dominio.Entidades;
 
-namespace MesaSitec.Dominio.Excepciones;
+namespace HelpDesk.Dominio.Excepciones;
 
 public class ExcepcionOperacionNoPermitida : ExcepcionNegocio
 {

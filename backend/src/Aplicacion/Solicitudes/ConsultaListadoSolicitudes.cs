@@ -1,6 +1,6 @@
-using MesaSitec.Dominio.Entidades;
+using HelpDesk.Dominio.Entidades;
 
-namespace MesaSitec.Aplicacion.Solicitudes;
+namespace HelpDesk.Aplicacion.Solicitudes;
 
 public record ConsultaListadoSolicitudes(
     EstadoSolicitud? Estado,

@@ -2,8 +2,8 @@ import type { ApiErrorBody } from '../types/api'
 
 export const API_BASE_URL = 'http://localhost:5080/api/v1'
 
-export const TOKEN_KEY = 'mesasitec.accessToken'
-export const USUARIO_KEY = 'mesasitec.usuario'
+export const TOKEN_KEY = 'helpdesk.accessToken'
+export const USUARIO_KEY = 'helpdesk.usuario'
 
 export class ApiError extends Error {
   readonly codigo: string

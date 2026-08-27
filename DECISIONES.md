@@ -1,4 +1,4 @@
-# Decisiones técnicas — MesaSitec
+# Decisiones técnicas — HelpDesk
 
 Resumen ejecutivo del desarrollo. El registro completo y ampliado vive en `rules/registro-decisiones.md`.
 

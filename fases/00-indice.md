@@ -1,4 +1,4 @@
-# Plan de fases — MesaSitec
+# Plan de fases — HelpDesk
 
 Plan de trabajo de la prueba técnica, dividido en fases. Cada fase es un archivo `.md` independiente que se resuelve de una sola vez: tiene su objetivo, sus pasos, su criterio de terminado y su commit sugerido.
 

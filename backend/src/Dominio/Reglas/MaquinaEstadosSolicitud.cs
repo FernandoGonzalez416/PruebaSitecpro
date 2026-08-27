@@ -1,7 +1,7 @@
-using MesaSitec.Dominio.Entidades;
-using MesaSitec.Dominio.Excepciones;
+using HelpDesk.Dominio.Entidades;
+using HelpDesk.Dominio.Excepciones;
 
-namespace MesaSitec.Dominio.Reglas;
+namespace HelpDesk.Dominio.Reglas;
 
 public static class MaquinaEstadosSolicitud
 {

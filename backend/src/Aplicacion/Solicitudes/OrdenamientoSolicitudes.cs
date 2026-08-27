@@ -1,4 +1,4 @@
-namespace MesaSitec.Aplicacion.Solicitudes;
+namespace HelpDesk.Aplicacion.Solicitudes;
 
 public static class OrdenamientoSolicitudes
 {

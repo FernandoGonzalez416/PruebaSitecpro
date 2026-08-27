@@ -1,28 +1,28 @@
-using MesaSitec.Aplicacion.Solicitudes;
-using MesaSitec.Aplicacion.Solicitudes.DTOs;
-using MesaSitec.Dominio.Entidades;
-using MesaSitec.Dominio.Reglas;
-using MesaSitec.Infraestructura.Data;
-using MesaSitec.Infraestructura.Solicitudes;
+using HelpDesk.Aplicacion.Solicitudes;
+using HelpDesk.Aplicacion.Solicitudes.DTOs;
+using HelpDesk.Dominio.Entidades;
+using HelpDesk.Dominio.Reglas;
+using HelpDesk.Infraestructura.Data;
+using HelpDesk.Infraestructura.Solicitudes;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
-namespace MesaSitec.Tests.Aplicacion;
+namespace HelpDesk.Tests.Aplicacion;
 
 public class SolicitudServicioTests : IDisposable
 {
     private readonly SqliteConnection _conexion;
-    private readonly DbContextOptions<MesaSitecDbContext> _opciones;
+    private readonly DbContextOptions<HelpDeskDbContext> _opciones;
 
     public SolicitudServicioTests()
     {
         _conexion = new SqliteConnection("DataSource=:memory:");
         _conexion.Open();
-        _opciones = new DbContextOptionsBuilder<MesaSitecDbContext>()
+        _opciones = new DbContextOptionsBuilder<HelpDeskDbContext>()
             .UseSqlite(_conexion)
             .Options;
 
-        using (var db = new MesaSitecDbContext(_opciones))
+        using (var db = new HelpDeskDbContext(_opciones))
         {
             db.Database.EnsureCreated();
         }
@@ -40,7 +40,7 @@ public class SolicitudServicioTests : IDisposable
         var solicitudId = Guid.NewGuid();
         var fechaCreacion = new DateTime(2026, 1, 15, 8, 0, 0, DateTimeKind.Utc);
 
-        using (var db = new MesaSitecDbContext(_opciones))
+        using (var db = new HelpDeskDbContext(_opciones))
         {
             db.Tenants.Add(new Tenant { Id = tenantId, Nombre = "Cooperativa Norte", Activo = true });
             db.Usuarios.Add(new Usuario
@@ -71,7 +71,7 @@ public class SolicitudServicioTests : IDisposable
             await db.SaveChangesAsync();
         }
 
-        using (var db = new MesaSitecDbContext(_opciones))
+        using (var db = new HelpDeskDbContext(_opciones))
         {
             var servicio = new SolicitudServicio(new SolicitudDatos(db));
 
@@ -107,7 +107,7 @@ public class SolicitudServicioTests : IDisposable
         var solicitudId = Guid.NewGuid();
         var fechaCreacion = new DateTime(2026, 1, 15, 8, 0, 0, DateTimeKind.Utc);
 
-        using (var db = new MesaSitecDbContext(_opciones))
+        using (var db = new HelpDeskDbContext(_opciones))
         {
             db.Tenants.Add(new Tenant { Id = tenantId, Nombre = "Cooperativa Norte", Activo = true });
             db.Usuarios.AddRange(agente1, agente2, new Usuario
@@ -139,7 +139,7 @@ public class SolicitudServicioTests : IDisposable
             await db.SaveChangesAsync();
         }
 
-        using (var db = new MesaSitecDbContext(_opciones))
+        using (var db = new HelpDeskDbContext(_opciones))
         {
             var servicio = new SolicitudServicio(new SolicitudDatos(db));
 
@@ -165,7 +165,7 @@ public class SolicitudServicioTests : IDisposable
         var solicitudId = Guid.NewGuid();
         var fechaCreacion = new DateTime(2026, 1, 15, 8, 0, 0, DateTimeKind.Utc);
 
-        using (var db = new MesaSitecDbContext(_opciones))
+        using (var db = new HelpDeskDbContext(_opciones))
         {
             db.Tenants.Add(new Tenant { Id = tenantId, Nombre = "Cooperativa Norte", Activo = true });
             db.Usuarios.AddRange(agente, new Usuario
@@ -197,7 +197,7 @@ public class SolicitudServicioTests : IDisposable
             await db.SaveChangesAsync();
         }
 
-        using (var db = new MesaSitecDbContext(_opciones))
+        using (var db = new HelpDeskDbContext(_opciones))
         {
             var servicio = new SolicitudServicio(new SolicitudDatos(db));
 

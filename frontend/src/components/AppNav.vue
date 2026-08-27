@@ -13,7 +13,7 @@ function cerrarSesion(): void {
 
 <template>
   <nav data-testid="app-nav" class="app-nav">
-    <span class="app-nav-marca">MesaSitec</span>
+    <span class="app-nav-marca">HelpDesk</span>
     <span class="app-nav-usuario">
       <span data-testid="nav-usuario-nombre">{{ auth.usuario?.nombre ?? '' }}</span>
       <span data-testid="nav-usuario-rol">{{ auth.rol ?? '' }}</span>

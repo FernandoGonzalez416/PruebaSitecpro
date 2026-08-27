@@ -1,8 +1,8 @@
-# AGENTS.md — MesaSitec
+# AGENTS.md — HelpDesk
 
 ## Resumen del proyecto
 
-MesaSitec es una mesa de servicio SaaS multi-tenant construida con .NET 8 (Web API, EF Core, SQLite) y Vue 3 + TypeScript strict + Pinia + Vite. El objetivo es permitir que varias organizaciones compartan una misma instancia de aplicación sin que los datos de una se filtren a otra, gestionando solicitudes de soporte con un flujo de estados, cálculo automático de SLA y control de acceso por rol.
+HelpDesk es una mesa de servicio SaaS multi-tenant construida con .NET 8 (Web API, EF Core, SQLite) y Vue 3 + TypeScript strict + Pinia + Vite. El objetivo es permitir que varias organizaciones compartan una misma instancia de aplicación sin que los datos de una se filtren a otra, gestionando solicitudes de soporte con un flujo de estados, cálculo automático de SLA y control de acceso por rol.
 
 ## Arquitectura obligatoria
 

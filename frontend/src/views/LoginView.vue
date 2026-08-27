@@ -35,7 +35,8 @@ async function enviar(): Promise<void> {
 <template>
   <main class="vista-login">
     <form class="login-form" novalidate @submit.prevent="enviar">
-      <h1 class="login-titulo">MesaSitec</h1>
+      <span class="login-logo" aria-hidden="true"></span>
+      <h1 class="login-titulo">HelpDesk</h1>
       <p class="login-subtitulo">Mesa de servicio</p>
 
       <label for="login-email">Correo electrónico</label>
