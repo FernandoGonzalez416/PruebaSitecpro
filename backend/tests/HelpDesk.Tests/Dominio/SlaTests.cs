@@ -1,7 +1,7 @@
-using MesaSitec.Dominio.Entidades;
-using MesaSitec.Dominio.Reglas;
+using HelpDesk.Dominio.Entidades;
+using HelpDesk.Dominio.Reglas;
 
-namespace MesaSitec.Tests.Dominio;
+namespace HelpDesk.Tests.Dominio;
 
 public class SlaTests
 {

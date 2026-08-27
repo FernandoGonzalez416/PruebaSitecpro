@@ -1,8 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\Dominio\MesaSitec.Dominio.csproj" />
-    <ProjectReference Include="..\Aplicacion\MesaSitec.Aplicacion.csproj" />
+    <ProjectReference Include="..\Dominio\HelpDesk.Dominio.csproj" />
+    <ProjectReference Include="..\Aplicacion\HelpDesk.Aplicacion.csproj" />
   </ItemGroup>
 
   <ItemGroup>

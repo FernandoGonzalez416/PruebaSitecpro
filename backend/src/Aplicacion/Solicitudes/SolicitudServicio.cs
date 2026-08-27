@@ -1,9 +1,9 @@
-using MesaSitec.Aplicacion.Solicitudes.DTOs;
-using MesaSitec.Dominio.Entidades;
-using MesaSitec.Dominio.Excepciones;
-using MesaSitec.Dominio.Reglas;
+using HelpDesk.Aplicacion.Solicitudes.DTOs;
+using HelpDesk.Dominio.Entidades;
+using HelpDesk.Dominio.Excepciones;
+using HelpDesk.Dominio.Reglas;
 
-namespace MesaSitec.Aplicacion.Solicitudes;
+namespace HelpDesk.Aplicacion.Solicitudes;
 
 public class SolicitudServicio : ISolicitudServicio
 {

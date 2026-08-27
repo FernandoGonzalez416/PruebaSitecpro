@@ -1,7 +1,7 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace MesaSitec.Infraestructura.Data;
+namespace HelpDesk.Infraestructura.Data;
 
 public class UtcDateTimeConverter : ValueConverter<DateTime, string>
 {

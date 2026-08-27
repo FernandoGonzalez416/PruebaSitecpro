@@ -1,7 +1,7 @@
-using MesaSitec.Dominio.Excepciones;
+using HelpDesk.Dominio.Excepciones;
 using Microsoft.AspNetCore.Diagnostics;
 
-namespace MesaSitec.Api.Errores;
+namespace HelpDesk.Api.Errores;
 
 public class ErrorHandler : IExceptionHandler
 {
@@ -45,7 +45,7 @@ public class ErrorHandler : IExceptionHandler
 
         var cuerpo = new Dictionary<string, object?>
         {
-            ["type"] = $"https://mesasitec.local/errores/{CodigoAKebab(codigo)}",
+            ["type"] = $"https://helpdesk.local/errores/{CodigoAKebab(codigo)}",
             ["title"] = title,
             ["status"] = status,
             ["detail"] = detail,

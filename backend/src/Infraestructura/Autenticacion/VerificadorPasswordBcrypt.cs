@@ -1,6 +1,6 @@
-using MesaSitec.Aplicacion.Autenticacion;
+using HelpDesk.Aplicacion.Autenticacion;
 
-namespace MesaSitec.Infraestructura.Autenticacion;
+namespace HelpDesk.Infraestructura.Autenticacion;
 
 public class VerificadorPasswordBcrypt : IVerificadorPassword
 {

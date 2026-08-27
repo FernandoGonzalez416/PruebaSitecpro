@@ -1,4 +1,4 @@
-namespace MesaSitec.Aplicacion.Autenticacion.DTOs;
+namespace HelpDesk.Aplicacion.Autenticacion.DTOs;
 
 public class UsuarioDto
 {

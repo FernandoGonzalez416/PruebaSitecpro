@@ -1,4 +1,4 @@
-namespace MesaSitec.Dominio.Entidades;
+namespace HelpDesk.Dominio.Entidades;
 
 public enum RolUsuario
 {

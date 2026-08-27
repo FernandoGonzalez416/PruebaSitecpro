@@ -1,7 +1,7 @@
-using MesaSitec.Aplicacion.Solicitudes.DTOs;
-using MesaSitec.Dominio.Entidades;
+using HelpDesk.Aplicacion.Solicitudes.DTOs;
+using HelpDesk.Dominio.Entidades;
 
-namespace MesaSitec.Aplicacion.Solicitudes;
+namespace HelpDesk.Aplicacion.Solicitudes;
 
 public interface ISolicitudServicio
 {

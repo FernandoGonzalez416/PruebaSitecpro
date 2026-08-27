@@ -1,13 +1,13 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using MesaSitec.Aplicacion.Autenticacion;
-using MesaSitec.Aplicacion.Solicitudes;
-using MesaSitec.Api.Errores;
-using MesaSitec.Infraestructura.Autenticacion;
-using MesaSitec.Infraestructura.Data;
-using MesaSitec.Infraestructura.Data.Semilla;
-using MesaSitec.Infraestructura.Solicitudes;
+using HelpDesk.Aplicacion.Autenticacion;
+using HelpDesk.Aplicacion.Solicitudes;
+using HelpDesk.Api.Errores;
+using HelpDesk.Infraestructura.Autenticacion;
+using HelpDesk.Infraestructura.Data;
+using HelpDesk.Infraestructura.Data.Semilla;
+using HelpDesk.Infraestructura.Solicitudes;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
@@ -22,7 +22,7 @@ var sqlite = new SqliteConnectionStringBuilder(connectionString);
 if (!Path.IsPathRooted(sqlite.DataSource))
     sqlite.DataSource = Path.Combine(builder.Environment.ContentRootPath, sqlite.DataSource);
 
-builder.Services.AddDbContext<MesaSitecDbContext>(options =>
+builder.Services.AddDbContext<HelpDeskDbContext>(options =>
     options.UseSqlite(sqlite.ConnectionString));
 
 var jwtSecret = builder.Configuration["JWT_SECRET"]
@@ -40,7 +40,7 @@ if (string.IsNullOrWhiteSpace(jwtSecret) || jwtSecret.Length < 32)
 }
 
 builder.Services.AddSingleton<IGeneradorTokens>(_ =>
-    new GeneradorTokenJwt(jwtSecret, jwtIssuer ?? "mesasitec", jwtAudience ?? "mesasitec-client"));
+    new GeneradorTokenJwt(jwtSecret, jwtIssuer ?? "helpdesk", jwtAudience ?? "helpdesk-client"));
 builder.Services.AddSingleton<IVerificadorPassword, VerificadorPasswordBcrypt>();
 builder.Services.AddScoped<IAutenticacionDatos, AutenticacionDatos>();
 builder.Services.AddScoped<IAutenticacionServicio, AutenticacionServicio>();
@@ -64,7 +64,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 
         return new ObjectResult(new
         {
-            type = "https://mesasitec.local/errores/validacion",
+            type = "https://helpdesk.local/errores/validacion",
             title = "Error de validación",
             status = StatusCodes.Status422UnprocessableEntity,
             detail = "Los campos enviados no son válidos.",
@@ -131,7 +131,7 @@ builder.Services
                 return context.Response.WriteAsJsonAsync(
                     new
                     {
-                        type = "https://mesasitec.local/errores/no-autenticado",
+                        type = "https://helpdesk.local/errores/no-autenticado",
                         title = "No autenticado",
                         status = 401,
                         detail = "Token ausente, inválido o expirado.",
@@ -169,7 +169,7 @@ app.MapControllers();
 
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<MesaSitecDbContext>();
+    var db = scope.ServiceProvider.GetRequiredService<HelpDeskDbContext>();
 
     await db.Database.MigrateAsync();
     await SeedData.SembrarAsync(db);

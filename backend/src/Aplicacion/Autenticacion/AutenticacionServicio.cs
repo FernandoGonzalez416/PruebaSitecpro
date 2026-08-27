@@ -1,8 +1,8 @@
-using MesaSitec.Aplicacion.Autenticacion.DTOs;
-using MesaSitec.Dominio.Entidades;
-using MesaSitec.Dominio.Excepciones;
+using HelpDesk.Aplicacion.Autenticacion.DTOs;
+using HelpDesk.Dominio.Entidades;
+using HelpDesk.Dominio.Excepciones;
 
-namespace MesaSitec.Aplicacion.Autenticacion;
+namespace HelpDesk.Aplicacion.Autenticacion;
 
 public class AutenticacionServicio : IAutenticacionServicio
 {

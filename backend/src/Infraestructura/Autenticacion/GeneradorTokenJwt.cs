@@ -1,11 +1,11 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using MesaSitec.Aplicacion.Autenticacion;
-using MesaSitec.Dominio.Entidades;
+using HelpDesk.Aplicacion.Autenticacion;
+using HelpDesk.Dominio.Entidades;
 using Microsoft.IdentityModel.Tokens;
 
-namespace MesaSitec.Infraestructura.Autenticacion;
+namespace HelpDesk.Infraestructura.Autenticacion;
 
 public class GeneradorTokenJwt : IGeneradorTokens
 {

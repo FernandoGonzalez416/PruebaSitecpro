@@ -2,9 +2,9 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using MesaSitec.Infraestructura.Data.Semilla;
+using HelpDesk.Infraestructura.Data.Semilla;
 
-namespace MesaSitec.Tests.Integracion;
+namespace HelpDesk.Tests.Integracion;
 
 [CollectionDefinition(ColeccionApiIntegracion.Name)]
 public class ColeccionApiIntegracion : ICollectionFixture<ApiWebApplicationFactory>

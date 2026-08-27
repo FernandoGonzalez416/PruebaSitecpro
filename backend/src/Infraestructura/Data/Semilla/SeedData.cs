@@ -1,9 +1,9 @@
 using System.Globalization;
-using MesaSitec.Dominio.Entidades;
-using MesaSitec.Infraestructura.Data;
+using HelpDesk.Dominio.Entidades;
+using HelpDesk.Infraestructura.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace MesaSitec.Infraestructura.Data.Semilla;
+namespace HelpDesk.Infraestructura.Data.Semilla;
 
 public static class SeedData
 {
@@ -12,7 +12,7 @@ public static class SeedData
     private const string PasswordSemilla = "Sitec.2026";
     private const string SaltSemilla = "$2a$11$Sitec2026SeedSaltXXX00";
 
-    public static async Task SembrarAsync(MesaSitecDbContext db)
+    public static async Task SembrarAsync(HelpDeskDbContext db)
     {
         if (await db.Tenants.AnyAsync())
         {

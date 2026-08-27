@@ -1,16 +1,16 @@
 using System.Linq.Expressions;
-using MesaSitec.Aplicacion.Solicitudes;
-using MesaSitec.Dominio.Entidades;
-using MesaSitec.Infraestructura.Data;
+using HelpDesk.Aplicacion.Solicitudes;
+using HelpDesk.Dominio.Entidades;
+using HelpDesk.Infraestructura.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace MesaSitec.Infraestructura.Solicitudes;
+namespace HelpDesk.Infraestructura.Solicitudes;
 
 public class SolicitudDatos : ISolicitudDatos
 {
-    private readonly MesaSitecDbContext _db;
+    private readonly HelpDeskDbContext _db;
 
-    public SolicitudDatos(MesaSitecDbContext db)
+    public SolicitudDatos(HelpDeskDbContext db)
     {
         _db = db;
     }

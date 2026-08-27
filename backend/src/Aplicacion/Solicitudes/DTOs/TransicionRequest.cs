@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace MesaSitec.Aplicacion.Solicitudes.DTOs;
+namespace HelpDesk.Aplicacion.Solicitudes.DTOs;
 
 public class TransicionRequest
 {

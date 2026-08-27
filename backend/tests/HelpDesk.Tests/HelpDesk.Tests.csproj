@@ -22,10 +22,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Api\MesaSitec.Api.csproj" />
-    <ProjectReference Include="..\..\src\Dominio\MesaSitec.Dominio.csproj" />
-    <ProjectReference Include="..\..\src\Aplicacion\MesaSitec.Aplicacion.csproj" />
-    <ProjectReference Include="..\..\src\Infraestructura\MesaSitec.Infraestructura.csproj" />
+    <ProjectReference Include="..\..\src\Api\HelpDesk.Api.csproj" />
+    <ProjectReference Include="..\..\src\Dominio\HelpDesk.Dominio.csproj" />
+    <ProjectReference Include="..\..\src\Aplicacion\HelpDesk.Aplicacion.csproj" />
+    <ProjectReference Include="..\..\src\Infraestructura\HelpDesk.Infraestructura.csproj" />
   </ItemGroup>
 
 </Project>

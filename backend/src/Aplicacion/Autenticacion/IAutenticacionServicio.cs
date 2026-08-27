@@ -1,6 +1,6 @@
-using MesaSitec.Aplicacion.Autenticacion.DTOs;
+using HelpDesk.Aplicacion.Autenticacion.DTOs;
 
-namespace MesaSitec.Aplicacion.Autenticacion;
+namespace HelpDesk.Aplicacion.Autenticacion;
 
 public interface IAutenticacionServicio
 {
