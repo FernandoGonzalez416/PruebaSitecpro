@@ -3,26 +3,26 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: mesasitec-api
+    container_name: helpdesk-api
     ports:
       - "5080:5080"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:5080
       JWT_SECRET: super-secreto-cambiar-en-produccion-de-al-menos-32-caracteres
-      ConnectionStrings__Default: Data Source=/app/data/mesasitec.db
+      ConnectionStrings__Default: Data Source=/app/data/helpdesk.db
     volumes:
-      - mesasitec-data:/app/data
+      - helpdesk-data:/app/data
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: mesasitec-frontend
+    container_name: helpdesk-frontend
     ports:
       - "5173:80"
     depends_on:
       - api
 
 volumes:
-  mesasitec-data:
+  helpdesk-data:
