@@ -17,6 +17,10 @@ onMounted(() => {
   <div class="app">
     <AppNav v-if="auth.estaAutenticado" />
     <Toast />
-    <RouterView />
+    <RouterView v-slot="{ Component }">
+      <Transition name="pagina" mode="out-in">
+        <component :is="Component" />
+      </Transition>
+    </RouterView>
   </div>
 </template>
