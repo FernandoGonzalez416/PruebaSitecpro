@@ -1,4 +1,4 @@
-# Contrato de API — MesaSitec
+# Contrato de API — HelpDesk
 
 **Base:** `http://localhost:5080/api/v1`
 
@@ -18,7 +18,7 @@ Todas las respuestas de error usan `Content-Type: application/problem+json`:
 
 ```json
 {
-  "type": "https://mesasitec.local/errores/transicion-invalida",
+  "type": "https://helpdesk.local/errores/transicion-invalida",
   "title": "Transición inválida",
   "status": 409,
   "detail": "No se puede aplicar 'resolver' sobre una solicitud en estado 'Nueva'.",
@@ -31,7 +31,7 @@ Todas las respuestas de error usan `Content-Type: application/problem+json`:
 
 - `codigo` es **obligatorio** en todos los errores. Es el campo que revisan las pruebas automáticas.
 - `errores` aparece solo en errores de validación (400 y 422).
-- `type` sigue el patrón `https://mesasitec.local/errores/{kebab-case}`.
+- `type` sigue el patrón `https://helpdesk.local/errores/{kebab-case}`.
 
 ### Códigos de error
 

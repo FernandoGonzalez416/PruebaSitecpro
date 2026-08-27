@@ -1,4 +1,4 @@
-# Reglas de negocio — MesaSitec
+# Reglas de negocio — HelpDesk
 
 ## RN-01 — Aislamiento entre organizaciones
 

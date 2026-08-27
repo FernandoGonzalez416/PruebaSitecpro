@@ -1,4 +1,4 @@
-# Conventional Commits — MesaSitec
+# Conventional Commits — HelpDesk
 
 ## Formato obligatorio
 

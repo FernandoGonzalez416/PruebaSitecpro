@@ -1,4 +1,4 @@
-# Registro de decisiones técnicas — MesaSitec
+# Registro de decisiones técnicas — HelpDesk
 
 ## Propósito
 
@@ -44,7 +44,7 @@ Al final del desarrollo (o al preparar la entrega), se **cura y resume** en `DEC
 
 El agente de IA debe generar o proponer una entrada en este registro **sin que se le pida explícitamente** cuando ocurra cualquiera de estas situaciones:
 
-| Situación | Ejemplo concreto en MesaSitec |
+| Situación | Ejemplo concreto en HelpDesk |
 |---|---|
 | Se resuelve una ambigüedad del enunciado que no estaba explícita | El enunciado no define si `q` busca en `codigo` como substring exacto o parcial; se decide que es parcial sin distinguir mayúsculas |
 | Se elige entre dos formas válidas de implementar una regla de negocio | Decidir si RN-03 se valida con un atributo en la acción, un servicio de permisos centralizado, o una tabla de permisos en base de datos |
@@ -177,7 +177,7 @@ cronológicamente como texto.
 **Por qué:** El contrato exige fechas ISO-8601 con sufijo Z; sin `Kind=Utc` en
 lectura, cualquier cálculo de SLA (fase 04) o serialización fallaría.
 
-**Alcance:** `UtcDateTimeConverter.cs`, `MesaSitecDbContext.cs`.
+**Alcance:** `UtcDateTimeConverter.cs`, `HelpDeskDbContext.cs`.
 
 ---
 
@@ -339,16 +339,16 @@ con validación automática de `[ApiController]`.
 
 ## [2026-07-31] — Ruta SQLite relativa anclada a ContentRootPath
 
-**Contexto:** La connection string `Data Source=mesasitec.db` es relativa y SQLite la
+**Contexto:** La connection string `Data Source=helpdesk.db` es relativa y SQLite la
 resuelve contra el directorio de trabajo (CWD), no contra el directorio de la app. Si
 la API se ejecuta desde otro directorio (repo root, servicio con otro WorkingDirectory),
-se crea un `mesasitec.db` distinto en ese CWD y el seed re-siembra datos vacíos →
+se crea un `helpdesk.db` distinto en ese CWD y el seed re-siembra datos vacíos →
 aparenta pérdida de datos. Se detectó durante la verificación de la fase 03.
 
 **Decisión:** En `Program.cs`, la connection string se parsea con
 `SqliteConnectionStringBuilder`; si `DataSource` no es una ruta raíz, se ancla con
 `Path.Combine(builder.Environment.ContentRootPath, dataSource)`. La DB vive siempre en
-`backend/src/Api/mesasitec.db` sin importar desde dónde se ejecute la app.
+`backend/src/Api/helpdesk.db` sin importar desde dónde se ejecute la app.
 
 **Alternativa descartada:** (a) Hardcodear una ruta absoluta en `appsettings.json`: rompe
 portabilidad y versiona una ruta de una máquina concreta. (b) Dejar la ruta relativa y
@@ -577,7 +577,7 @@ cualquier 401 limpie la sesión y redirija a `/login`. Había que elegir dónde 
 token: memoria, sessionStorage o localStorage.
 
 **Decisión:** El token y el `usuario` (JSON) se guardan en `localStorage` con claves
-`mesasitec.accessToken` / `mesasitec.usuario`. El store de auth inicializa su estado
+`helpdesk.accessToken` / `helpdesk.usuario`. El store de auth inicializa su estado
 desde ahí (lectura síncrona en el guard del router, que no puede ser async para esto)
 y `cargarMe()` valida el token contra `/me` al recargar; si el token expiró, el
 interceptor de 401 lo limpia y redirige.
@@ -806,12 +806,12 @@ código se genera en el servidor y no lo conocemos antes.
 
 ## [2026-08-01] — Tests de integración HTTP sobre la API con WebApplicationFactory
 
-**Contexto:** El proyecto de tests (`MesaSitec.Tests`) solo referenciaba `Dominio`, `Aplicacion` e `Infraestructura`; los controllers de `Api`, el middleware de errores y el cableado JWT no tenían ninguna cobertura (0%). La verificación del contrato de los 9 endpoints había sido manual/semi-manual y se mencionaba en `DECISIONES.md` como "con una semana más". Se detectó además que los tests de integración requieren liberar el `.exe` de la API, bloqueado por el dev server corriendo.
+**Contexto:** El proyecto de tests (`HelpDesk.Tests`) solo referenciaba `Dominio`, `Aplicacion` e `Infraestructura`; los controllers de `Api`, el middleware de errores y el cableado JWT no tenían ninguna cobertura (0%). La verificación del contrato de los 9 endpoints había sido manual/semi-manual y se mencionaba en `DECISIONES.md` como "con una semana más". Se detectó además que los tests de integración requieren liberar el `.exe` de la API, bloqueado por el dev server corriendo.
 
-**Decisión:** Se agrega `Microsoft.AspNetCore.Mvc.Testing` 8.0.29 al proyecto de tests, se referencia `MesaSitec.Api`, y se crea `ApiWebApplicationFactory` que corre la app real con una base SQLite temporal por corrida (`Path.GetTempPath()` + GUID, borrada en `Dispose`) y config de JWT de prueba vía `ConfigureAppConfiguration`. Se expone el tipo `Program` con `public partial class Program { }` (patrón documentado para `WebApplicationFactory<TEntryPoint>`). La colección xUnit `ApiIntegracion` comparte la factory (una sola migración + seed). 23 tests cubren: health, login ok/fallo, `/me` con y sin token, categorías por tenant, listado paginado + filtros server-side (`estado`, `q`, `sort`, `page`/`pageSize`), aislamiento multi-tenant (RN-01 → 404, nunca 403), permisos RN-03 (403), crear con `Location`, validación 422 `VALIDACION`, edición con recálculo de SLA (RN-04), flujo completo de transiciones y los códigos de error `TRANSICION_INVALIDA` (409), `MOTIVO_REQUERIDO` (422) y `AGENTE_INVALIDO` (422).
+**Decisión:** Se agrega `Microsoft.AspNetCore.Mvc.Testing` 8.0.29 al proyecto de tests, se referencia `HelpDesk.Api`, y se crea `ApiWebApplicationFactory` que corre la app real con una base SQLite temporal por corrida (`Path.GetTempPath()` + GUID, borrada en `Dispose`) y config de JWT de prueba vía `ConfigureAppConfiguration`. Se expone el tipo `Program` con `public partial class Program { }` (patrón documentado para `WebApplicationFactory<TEntryPoint>`). La colección xUnit `ApiIntegracion` comparte la factory (una sola migración + seed). 23 tests cubren: health, login ok/fallo, `/me` con y sin token, categorías por tenant, listado paginado + filtros server-side (`estado`, `q`, `sort`, `page`/`pageSize`), aislamiento multi-tenant (RN-01 → 404, nunca 403), permisos RN-03 (403), crear con `Location`, validación 422 `VALIDACION`, edición con recálculo de SLA (RN-04), flujo completo de transiciones y los códigos de error `TRANSICION_INVALIDA` (409), `MOTIVO_REQUERIDO` (422) y `AGENTE_INVALIDO` (422).
 
 **Alternativa descartada:** (a) `InternalsVisibleTo` para no tocar `Program.cs` — el patrón `public partial class Program` es el estándar de Microsoft y deja el tipo público también para otros consumidores de test. (b) Base en memoria `DataSource=:memory:` — el `Program.cs` combina la ruta con `ContentRootPath` cuando no es absoluta y rompería el anclaje; una ruta temporal absoluta lo evita. (c) Cambiar `MigrateAsync`/seed para tests — no hace falta: una base fresca por corrida hace el arranque idéntico al real.
 
 **Por qué:** Los tests de integración ejercitan el contrato literal que evalúa el corrector (status, `codigo`, `application/problem+json`, camelCase, multi-tenant) y protegen la capa que era el mayor agujero de cobertura: `Api` pasa de 0% a ~95% y la corrida completa de 80 tests queda en verde. La verificación manual HTTP queda ahora como smoke test complementario, no como única prueba.
 
-**Alcance:** `backend/src/Api/Program.cs` (exposición de `Program`), `backend/tests/MesaSitec.Tests/MesaSitec.Tests.csproj` (paquete + referencia a Api), `backend/tests/MesaSitec.Tests/Integracion/{ApiWebApplicationFactory.cs, DtosApi.cs, ApiIntegracionTests.cs}`.
+**Alcance:** `backend/src/Api/Program.cs` (exposición de `Program`), `backend/tests/HelpDesk.Tests/HelpDesk.Tests.csproj` (paquete + referencia a Api), `backend/tests/HelpDesk.Tests/Integracion/{ApiWebApplicationFactory.cs, DtosApi.cs, ApiIntegracionTests.cs}`.

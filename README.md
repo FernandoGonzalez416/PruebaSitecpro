@@ -1,4 +1,4 @@
-# MesaSitec
+# HelpDesk
 
 Mesa de servicio SaaS **multi-tenant**: varias organizaciones comparten la misma instancia sin que los datos de una se filtren a otra. Solicitudes de soporte con máquina de estados, cálculo automático de SLA y control de acceso por rol.
 
@@ -18,7 +18,7 @@ No se requiere SQLite instalado: la base es un archivo local que se migra y siem
 
 ## Levantamiento (4 comandos, < 5 minutos)
 
-Dos terminales. La base de datos se migra y siembra automáticamente en el primer arranque (`mesasitec.db` junto a la API). No hay pasos manuales.
+Dos terminales. La base de datos se migra y siembra automáticamente en el primer arranque (`helpdesk.db` junto a la API). No hay pasos manuales.
 
 ```powershell
 # Terminal 1 — Backend (puerto 5080)
